@@ -1,14 +1,14 @@
-# mybatis-processor
-mybatis-processor 该工具是用于在编译阶段自动生成mybatis 的Example.java 和Mapper.xml文件
+# simple-jdbc-processor
+simple-jdbc-processor 该工具是用于在编译阶段自动生成Repository,TypeHandler
 
 ### 使用方式
 ```
 依赖:
 
  <dependency>
-      <artifactId>mybatis-processor-core</artifactId>
-      <groupId>io.github.wu191287278</groupId>
-      <version>2.2.2</version>
+      <artifactId>simple-jdbc-processor-starter</artifactId>
+      <groupId>io.github.simple-jdbc-processor</groupId>
+      <version>1.0.0</version>
 </dependency>
 
 maven 编译插件:
@@ -21,9 +21,9 @@ maven 编译插件:
         <target>1.8</target>
         <annotationProcessorPaths>
             <path>
-                <artifactId>mybatis-processor-core</artifactId>
-                <groupId>com.github.wu191287278</groupId>
-                <version>2.2.2</version>
+                <artifactId>simple-jdbc-processor-core</artifactId>
+                <groupId>com.github.simple-jdbc-processor</groupId>
+                <version>1.0.0</version>
             </path>
         </annotationProcessorPaths>
     </configuration>
@@ -32,11 +32,10 @@ maven 编译插件:
 ```
 
 
-1. Domain 类需要打上Example 注解并指定namespace 既可生成mapper.xml 以及example 查询类生成路径为domain类同级.
-命名规则为: domain+ExampleMapper.xml,domainExample.java
+1. Domain 类需要打上SimpleJdbc 注解 即可生成对应的Repository,TypeHandler
 
 ```
-@Example(namespace = "com.example.repositories.CommentRepository") //该namespace 是mapper.xml namespace
+@SimpleJdbc
 @Data
 @Accessors(chain = true)
 @Entity
@@ -65,60 +64,11 @@ public class Comment {
 }
 ```
 
-2. SpringBoot需要扫描生成的DomainExampleMapper.xml文件
-
-
-application.yml
-
-```
-mybatis:
-  mapper-locations:
-    - classpath:com/example/domain/*ExampleMapper.xml
-```
-
-3. 使用方式
+2. 使用方式
 
 ```
 CommentExample query = CommentExample.create()
     .andUserIdEqualTo("1","2")
     .page(1,10);
 List<Comment> comments = commentRepository.selectByExample(query);
-```
-
-3. mybatisConfig.xml 使用方式
-
-```
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE configuration
-        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-config.dtd">
-<configuration>
-    <environments default="development">
-        <environment id="development">
-            <transactionManager type="JDBC" />
-            <dataSource type="POOLED">
-                <property name="driver" value="com.mysql.cj.jdbc.Driver" />
-                <property name="url" value="jdbc:mysql://localhost/users" />
-                <property name="username" value="root" />
-                <property name="password" value="root" />
-            </dataSource>
-        </environment>
-    </environments>
-    <mappers>
-        <mapper resource="com/example/domain/CommentExampleMapper.xml"/>
-    </mappers>
-
-</configuration>
-```
-
-使用方式
-
-```
-    InputStream in = Demo.class.getClassLoader().getResourceAsStream("mybatisConfig.xml");
-    SqlSessionFactory sessionFactory = new SqlSessionFactoryBuilder()
-            .build(in);
-    SqlSession sqlSession = sessionFactory.openSession();
-    CommentRepository commentRepository = sqlSession.getMapper(CommentRepository.class);
-    Comment comment = commentRepository.selectByPrimaryKey(1);
-    System.err.println(comment);
 ```
