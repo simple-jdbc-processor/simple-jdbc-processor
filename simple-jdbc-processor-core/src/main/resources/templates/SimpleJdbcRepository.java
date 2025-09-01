@@ -116,9 +116,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
     public long updateByPrimaryKey({{metadata.domainClazzName}} t) {
         getDefaultTypeHandler().preUpdate(t);
         List<Object> params = new ArrayList<>(columns.size());
-        {{#metadata.columnMetadataList}}
-        params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
-        {{/metadata.columnMetadataList}}
+        getDefaultTypeHandler().encode(params, t);
         long affect = update(updateByPrimaryKeySql, params);
         getDefaultTypeHandler().afterUpdate(t);
         return affect;
@@ -131,9 +129,9 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
                 .append(getTableName())
                 .append(" set ");
         List<Object> params = new ArrayList<>(columns.size());
+        getDefaultTypeHandler().encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
-            params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
             prefix.append("{{columnName}} = ?, ");
         }
         {{/metadata.columnMetadataList}}
@@ -187,9 +185,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
             params = new ArrayList<>(columns.size());
         }
 
-        {{#metadata.columnMetadataList}}
-        params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
-        {{/metadata.columnMetadataList}}
+        getDefaultTypeHandler().encode(params, t);
         String condition = toConditionSql(example);
         String sql;
         if (example.getUpdateExpression() != null) {
@@ -218,10 +214,11 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
             prefix.append(String.join(", ", example.getUpdateExpression()));
         }
 
+        getDefaultTypeHandler().encodeSelective(params, t);
+
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}} = ?, ");
-            params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}
         params.addAll(getConditionValues(example));
@@ -254,9 +251,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
     public void insert({{metadata.domainClazzName}} t) {
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
-        {{#metadata.columnMetadataList}}
-        params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
-        {{/metadata.columnMetadataList}}
+        getDefaultTypeHandler().encode(params, t);
         {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(insertSql, params);
         if (primaryKey > 0) {
@@ -275,15 +270,13 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
 
         for ({{metadata.domainClazzName}} t : ts) {
             getDefaultTypeHandler().preInsert(t);
-            {{#metadata.columnMetadataList}}
-            params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
-            {{/metadata.columnMetadataList}}
+            getDefaultTypeHandler().encode(params, t);
             sql.append(appendPlaceholder(columns.size()))
                     .append(", ");
         }
         {{#metadata.primaryMetadata}}
         List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql.substring(0, sql.length() - 2), params);
-        for (int i = 0; i < primaryKeys.size(); i++) {
+        for (int i = 0; i < ts.size(); i++) {
             {{metadata.primaryMetadata.javaType}} primaryKey = primaryKeys.get(i);
             if (primaryKey > 0) {
                 ts.get(i).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
@@ -301,11 +294,10 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
                 .append("insert into ")
                 .append(getTableName())
                 .append(" (");
-
+        getDefaultTypeHandler().encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}}, ");
-            params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}
 
@@ -330,10 +322,11 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
                 .append(getTableName())
                 .append(" (");
 
+        getDefaultTypeHandler().encodeSelective(params, t);
+
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}}, ");
-            params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}
 
@@ -358,10 +351,10 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {
                 .append(getTableName())
                 .append(" (");
 
+        getDefaultTypeHandler().encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}}, ");
-            params.add(getDefaultTypeHandler().encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}
 

@@ -19,6 +19,8 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
 
     private Map<String, DataSource> dataSourceMap;
 
+    {{#metadata.primaryMetadata}}
+
     public {{metadata.domainClazzName}} selectByPrimaryKey({{metadata.domainClazzName}} t) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);
         return repository.selectByPrimaryKey(t.getId());
@@ -43,6 +45,7 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
         }
         return list;
     }
+    {{/metadata.primaryMetadata}}
 
     public List<{{metadata.domainClazzName}}> selectByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);
@@ -61,14 +64,15 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
         }
     }
 
-    public long updateByPrimaryKeySelective({{metadata.domainClazzName}} t) {
-        {{metadata.repositoryClazzName}} repository = getRepository(t);
-        return repository.updateByPrimaryKeySelective(t);
-    }
-
     public long updateByExampleSelective({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);
         return repository.updateByExampleSelective(t, example);
+    }
+
+{{#metadata.primaryMetadata}}
+    public long updateByPrimaryKeySelective({{metadata.domainClazzName}} t) {
+        {{metadata.repositoryClazzName}} repository = getRepository(t);
+        return repository.updateByPrimaryKeySelective(t);
     }
 
     public long deleteByPrimaryKey({{metadata.domainClazzName}} t) {
@@ -89,6 +93,7 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
         }
         return deleted;
     }
+{{/metadata.primaryMetadata}}
 
     public long deleteByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);

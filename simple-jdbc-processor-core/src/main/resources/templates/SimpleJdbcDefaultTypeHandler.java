@@ -49,6 +49,20 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
 
     }
 
+    public void encode(List params, {{metadata.domainClazzName}} t) {
+        {{#metadata.columnMetadataList}}
+        params.add(encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
+        {{/metadata.columnMetadataList}}
+    }
+
+    public void encodeSelective(List params, {{metadata.domainClazzName}} t) {
+        {{#metadata.columnMetadataList}}
+        if (t.get{{firstUpFieldName}}() != null) {
+            params.add(encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
+        }
+        {{/metadata.columnMetadataList}}
+    }
+
     public void setParameters(PreparedStatement ps, List params) throws SQLException {
         if (params != null && !params.isEmpty()) {
             for (int i = 0; i < params.size(); i++) {
