@@ -10,6 +10,7 @@ import java.sql.Date;
 import java.util.*;
 import java.util.function.Consumer;
 
+@SuppressWarnings("unchecked")
 public class {{metadata.typeHandlerClazzSimpleName}} {
 
 

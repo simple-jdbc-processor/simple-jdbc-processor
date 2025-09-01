@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unchecked")
 public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
 
     private final Map<String, {{metadata.repositoryClazzName}}> repositoryMap = new ConcurrentHashMap<>();
@@ -19,7 +20,6 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
 
     private Map<String, DataSource> dataSourceMap;
 
-    {{#metadata.primaryMetadata}}
 
     public {{metadata.domainClazzName}} selectByPrimaryKey({{metadata.domainClazzName}} t) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);
@@ -45,7 +45,6 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
         }
         return list;
     }
-    {{/metadata.primaryMetadata}}
 
     public List<{{metadata.domainClazzName}}> selectByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);
@@ -69,7 +68,6 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
         return repository.updateByExampleSelective(t, example);
     }
 
-{{#metadata.primaryMetadata}}
     public long updateByPrimaryKeySelective({{metadata.domainClazzName}} t) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);
         return repository.updateByPrimaryKeySelective(t);
@@ -93,7 +91,6 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
         }
         return deleted;
     }
-{{/metadata.primaryMetadata}}
 
     public long deleteByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         {{metadata.repositoryClazzName}} repository = getRepository(t);

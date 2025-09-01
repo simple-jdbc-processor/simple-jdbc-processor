@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 
+@SuppressWarnings("unchecked")
 public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable {
 
     private static final long serialVersionUID = 1000000L;
@@ -40,6 +41,7 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         this.distinct = true;
         return this;
     }
+
 
     public {{metadata.exampleClazzSimpleName}} columns(List<String> columns) {
         this.columns = columns;

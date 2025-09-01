@@ -9,7 +9,21 @@ public enum DialectEnums {
                     .setLeftEscape("`")
                     .setRightEscape("`")
     ),
-
+    POSTGRES(
+            new DialectMetadata()
+                    .setLeftEscape("\\\"")
+                    .setRightEscape("\\\"")
+    ),
+    MSSQL(
+            new DialectMetadata()
+                    .setLeftEscape("[")
+                    .setRightEscape("]")
+    ),
+    ORACLE(
+            new DialectMetadata()
+                    .setLeftEscape("\\\"")
+                    .setRightEscape("\\\"")
+    ),
     ;
 
     private final DialectMetadata value;

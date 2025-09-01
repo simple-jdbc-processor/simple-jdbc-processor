@@ -17,7 +17,7 @@ public @interface SimpleJdbc {
 
 
     /**
-     * 使用哪个数据库.
+     * 使用主库.
      */
     String dataSource() default "";
 
@@ -40,5 +40,10 @@ public @interface SimpleJdbc {
      * 分表
      */
     boolean shardTable() default false;
+
+    /**
+     * 是否继承 SimpleJdbcRepository 接口
+     */
+    boolean extendsSimpleJdbcRepository() default true;
 
 }

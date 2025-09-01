@@ -4,6 +4,7 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import io.github.simple.jdbc.processor.domain.ColumnMetadata;
+import io.github.simple.jdbc.processor.domain.DialectEnums;
 import io.github.simple.jdbc.processor.domain.DialectMetadata;
 import io.github.simple.jdbc.processor.domain.TableMetadata;
 import io.github.simple.jdbc.processor.util.CamelUtils;
@@ -62,6 +63,16 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                     SimpleJdbc example = element.getAnnotation(SimpleJdbc.class);
                     tableMetadata.setShard(example.shardTable());
                     DialectMetadata dialect = example.dialect().getValue();
+                    if (example.dialect() == DialectEnums.POSTGRES) {
+                        tableMetadata.setPostgres(true);
+                    } else if (example.dialect() == DialectEnums.MSSQL) {
+                        tableMetadata.setMssql(true);
+                    } else if (example.dialect() == DialectEnums.ORACLE) {
+                        tableMetadata.setOracle(true);
+                    } else {
+                        tableMetadata.setNone(true);
+                    }
+                    tableMetadata.setExtendsSimpleJdbcRepository(example.extendsSimpleJdbcRepository());
 
                     InputStream exampleInputStream = classLoader.getResourceAsStream(dialect.getExampleJavaTemplatePath());
                     try (InputStreamReader in = new InputStreamReader(exampleInputStream, StandardCharsets.UTF_8); Writer writer = javaFileObject.openWriter()) {

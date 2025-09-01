@@ -54,6 +54,12 @@ public class TableMetadata {
 
     private boolean shard;
 
+    private boolean mysql;
+    private boolean oracle;
+    private boolean postgres;
+    private boolean mssql;
+    private boolean none;
+    private boolean extendsSimpleJdbcRepository;
 
     public String getTableName() {
         return tableName;
@@ -286,6 +292,60 @@ public class TableMetadata {
 
     public TableMetadata setShard(boolean shard) {
         this.shard = shard;
+        return this;
+    }
+
+    public boolean isMysql() {
+        return mysql;
+    }
+
+    public TableMetadata setMysql(boolean mysql) {
+        this.mysql = mysql;
+        return this;
+    }
+
+    public boolean isOracle() {
+        return oracle;
+    }
+
+    public TableMetadata setOracle(boolean oracle) {
+        this.oracle = oracle;
+        return this;
+    }
+
+    public boolean isPostgres() {
+        return postgres;
+    }
+
+    public TableMetadata setPostgres(boolean postgres) {
+        this.postgres = postgres;
+        return this;
+    }
+
+    public boolean isMssql() {
+        return mssql;
+    }
+
+    public TableMetadata setMssql(boolean mssql) {
+        this.mssql = mssql;
+        return this;
+    }
+
+    public boolean isNone() {
+        return none;
+    }
+
+    public TableMetadata setNone(boolean none) {
+        this.none = none;
+        return this;
+    }
+
+    public boolean isExtendsSimpleJdbcRepository() {
+        return extendsSimpleJdbcRepository;
+    }
+
+    public TableMetadata setExtendsSimpleJdbcRepository(boolean extendsSimpleJdbcRepository) {
+        this.extendsSimpleJdbcRepository = extendsSimpleJdbcRepository;
         return this;
     }
 }

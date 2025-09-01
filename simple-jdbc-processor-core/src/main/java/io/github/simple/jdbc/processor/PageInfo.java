@@ -1,4 +1,4 @@
-package io.github.simple.jdbc.processor.starter;
+package io.github.simple.jdbc.processor;
 
 import java.io.Serializable;
 import java.util.List;
