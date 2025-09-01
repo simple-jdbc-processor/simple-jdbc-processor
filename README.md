@@ -1,6 +1,11 @@
 # simple-jdbc-processor
 simple-jdbc-processor 该工具是用于在编译阶段自动生成Repository,TypeHandler
 
+### 代码生成器
+
+
+前往 [Simple Jdbc Generate Query](https://simple-jdbc-processor.github.io/simple-jdbc-processor-generator/) 生成代码
+
 ### 使用方式
 ```
 依赖:
@@ -8,7 +13,7 @@ simple-jdbc-processor 该工具是用于在编译阶段自动生成Repository,Ty
  <dependency>
       <artifactId>simple-jdbc-processor-starter</artifactId>
       <groupId>io.github.simple-jdbc-processor</groupId>
-      <version>1.0.0</version>
+      <version>1.0.1</version>
 </dependency>
 
 maven 编译插件:
