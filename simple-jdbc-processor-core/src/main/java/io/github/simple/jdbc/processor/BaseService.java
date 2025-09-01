@@ -3,11 +3,11 @@ package io.github.simple.jdbc.processor;
 import java.util.List;
 import java.util.Map;
 
-public class SimpleJdbcService<T, ID, Example> {
+public class BaseService<T, ID, Example> {
 
     private final SimpleJdbcRepository<T, ID, Example> repository;
 
-    public SimpleJdbcService(SimpleJdbcRepository<T, ID, Example> repository) {
+    public BaseService(SimpleJdbcRepository<T, ID, Example> repository) {
         this.repository = repository;
     }
 
@@ -42,7 +42,6 @@ public class SimpleJdbcService<T, ID, Example> {
     public void insertBatch(List<T> ts) {
         this.repository.insertBatch(ts);
     }
-
 
     public void upsertSelective(T t) {
         this.repository.upsertSelective(t);
