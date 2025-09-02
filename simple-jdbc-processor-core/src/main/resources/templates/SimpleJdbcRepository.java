@@ -117,6 +117,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         getDefaultTypeHandler().preUpdate(t);
         List<Object> params = new ArrayList<>(columns.size());
         getDefaultTypeHandler().encode(params, t);
+        params.add(t.get{{metadata.primaryMetadata.firstUpFieldName}}());
         int affect = update(updateByPrimaryKeySql, params);
         getDefaultTypeHandler().afterUpdate(t);
         return affect;
@@ -444,6 +445,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        long total = 0;
         try (PreparedStatement statement = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
             statement.setFetchSize(Integer.MIN_VALUE);
             getDefaultTypeHandler().setParameters(statement, params);
@@ -451,6 +453,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
                 while (resultSet.next()) {
                     T handle = handler.handle(resultSet);
                     consumer.accept(handle);
+                    total++;
                 }
             }
         } catch (SQLException e) {
@@ -459,6 +462,9 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             if (autoCommit) {
                 close(connection);
             }
+        }
+        if (getLogger().isDebugEnabled()) {
+            getLogger().debug("Total:      {}", total);
         }
     }
 

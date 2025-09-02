@@ -191,16 +191,16 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
     }
 
     {{#metadata.columnMetadataList}}
-    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String name, Class<{{javaType}}> targetType) throws SQLException {
+    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, Class<{{javaType}}> targetType) throws SQLException {
         {{#isEnums}}
-        String value = resultSet.getString(name);
+        String value = resultSet.getString(column);
         if(value == null){
             return;
         }
         t.set{{firstUpFieldName}}(Enum.valueOf(targetType, value));
         {{/isEnums}}
         {{^isEnums}}
-        {{javaType}} value = resultSet.getObject(name, targetType);
+        {{javaType}} value = resultSet.getObject(column, targetType);
         if(value == null){
             return;
         }
