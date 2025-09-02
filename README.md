@@ -13,7 +13,7 @@ simple-jdbc-processor 该工具是用于在编译阶段自动生成Repository,Ty
  <dependency>
       <artifactId>simple-jdbc-processor-starter</artifactId>
       <groupId>io.github.simple-jdbc-processor</groupId>
-      <version>1.0.1</version>
+      <version>1.0.3</version>
 </dependency>
 
 maven 编译插件:
