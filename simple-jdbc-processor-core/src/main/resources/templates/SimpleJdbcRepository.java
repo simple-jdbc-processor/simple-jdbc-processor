@@ -261,6 +261,39 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return update(sql, params);
     }
 
+
+    public int[] updateBatchByExample(List<{{metadata.exampleClazzName}}> examples) {
+        Map<String,List<Object[]>> m = new LinkedHashMap<>();
+        for({{metadata.exampleClazzName}} example: examples){
+            StringBuilder prefix = new StringBuilder()
+                    .append("update ")
+                    .append(getTableName())
+                    .append(" set ");
+            List<Object> params;
+            if (example.getUpdateSetValues() != null) {
+                params = new ArrayList<>(example.getUpdateSetValues());
+            } else {
+                params = new ArrayList<>(columns.size());
+            }
+
+            if (example.getUpdateExpression() != null) {
+                prefix.append(String.join(", ", example.getUpdateExpression()));
+            }
+            params.addAll(getConditionValues(example));
+            String sql = prefix + toConditionSql(example);
+            m.computeIfAbsent(sql, k-> new ArrayList<>()).add(params.toArray());
+        }
+        int[] affect = new int[examples.size()];
+        int i = 0;
+        for(Map.Entry<String,List<Object[]>> e: m.entrySet()){
+            int[] affects = updateBatch(e.getKey(), e.getValue());
+            for(int a: affects){
+                affect[i++] = a;
+            }
+        }
+        return affect;
+    }
+
     public void insert({{metadata.domainClazzName}} t) {
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
@@ -646,6 +679,26 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return ids;
     }
 
+    public <T> List<T> aggregate({{metadata.exampleClazzSimpleName}} example, Handler<T> handler) {
+        StringBuilder sb = new StringBuilder("select ")
+                .append(String.join(", ", example.getAggregates()))
+                .append(" from ")
+                .append(getTableName())
+                .append(toConditionSql(example));
+
+        return selectList(sb.toString(), getConditionValues(example), handler);
+    }
+
+    public <T> T aggregateOne({{metadata.exampleClazzSimpleName}} example, Handler<T> handler) {
+        StringBuilder sb = new StringBuilder("select ")
+                .append(String.join(", ", example.getAggregates()))
+                .append(" from ")
+                .append(getTableName())
+                .append(toConditionSql(example));
+
+        return selectOne(sb.toString(), getConditionValues(example), handler);
+    }
+
 
     protected void closeCheckTx(Connection connection) {
         try {
@@ -756,6 +809,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
                         sql.append(criteria.getColumn())
                                 .append(criteria.getCondition())
                                 .append(appendPlaceholder(criteria.getListValue().size()));
+                    } else if (criteria.getCondition() != null) {
+                      sql.append(criteria.getCondition());
                     }
                 }
                 sql.append(")");
@@ -781,6 +836,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
                     sql.append(criteria.getColumn())
                             .append(criteria.getCondition())
                             .append(appendPlaceholder(criteria.getListValue().size()));
+                } else if (criteria.getCondition() != null) {
+                    sql.append(criteria.getCondition());
                 }
             }
         }
@@ -789,6 +846,17 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             sql.append(" order by ");
             sql.append(orderByClause);
         }
+
+        if (example.getGroupBy() != null && !example.getGroupBy().isEmpty()) {
+            sql.append(" group by ");
+            sql.append(String.join(", ", example.getGroupBy()));
+        }
+
+        if (example.getHaving() != null && !example.getHaving().isEmpty()) {
+            sql.append(" having ");
+            sql.append(String.join(" and ", example.getHaving()));
+        }
+
 
         if (limit != null && !limit.isEmpty()) {
             sql.append(" limit ");

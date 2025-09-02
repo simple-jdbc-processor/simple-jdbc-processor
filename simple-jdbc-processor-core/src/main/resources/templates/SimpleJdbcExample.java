@@ -31,6 +31,13 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     private List<Criteria> criteries = new ArrayList<>();
 
+    private List<String> groupBy = Collections.emptyList();
+
+    private List<String> aggregates = Collections.emptyList();
+
+    private List<String> having = Collections.emptyList();
+
+
     public {{metadata.exampleClazzSimpleName}}() {}
 
     public static {{metadata.exampleClazzSimpleName}} create(){
@@ -64,12 +71,27 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 
+    public {{metadata.exampleClazzSimpleName}} groupBy(String... columns) {
+        this.groupBy = Arrays.asList(columns);
+        return this;
+    }
+
+    public {{metadata.exampleClazzSimpleName}} having(String... expression) {
+        this.having = Arrays.asList(expression);
+        return this;
+    }
+
     public {{metadata.exampleClazzSimpleName}} or() {
         if (this.orConditions == null) {
             this.orConditions = new ArrayList<>();
         }
         this.orConditions.add(this.criteries);
         this.criteries = new ArrayList<>();
+        return this;
+    }
+
+    public {{metadata.exampleClazzSimpleName}} aggregate(String... aggregates) {
+        this.aggregates = Arrays.asList(aggregates);
         return this;
     }
 
@@ -273,6 +295,18 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     public List<String> getUpdateExpression() {
         return updateExpression;
+    }
+
+    public List<String> getAggregates(){
+        return this.aggregates;
+    }
+
+    public List<String> getGroupBy(){
+        return this.groupBy;
+    }
+
+    public List<String> getHaving(){
+        return this.having;
     }
 
 
