@@ -6,6 +6,8 @@ simple-jdbc-processor 该工具是用于在编译阶段自动生成Repository,Ty
 
 前往 [Simple Jdbc Generate Query](https://simple-jdbc-processor.github.io/simple-jdbc-processor-generator/) 生成代码
 
+Demo [Demo](https://simple-jdbc-processor.github.io/simple-jdbc-processor-generator/)
+
 ### 使用方式
 ```
 依赖:
