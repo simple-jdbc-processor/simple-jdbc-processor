@@ -67,7 +67,8 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                         tableMetadata.setPostgres(true);
                     } else if (example.dialect() == DialectEnums.MSSQL) {
                         tableMetadata.setMssql(true);
-                    } else if (example.dialect() == DialectEnums.ORACLE) {
+                    } else if (example.dialect() == DialectEnums.ORACLE || example.dialect() == DialectEnums.DB2
+                            || example.dialect() == DialectEnums.H2 || example.dialect() == DialectEnums.DERBY) {
                         tableMetadata.setOracle(true);
                     } else {
                         tableMetadata.setNone(true);

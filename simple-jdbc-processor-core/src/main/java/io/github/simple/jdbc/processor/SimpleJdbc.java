@@ -17,7 +17,7 @@ public @interface SimpleJdbc {
 
 
     /**
-     * 使用主库.
+     * 多数据库的情况下手动指定要使用主库.
      */
     String dataSource() default "";
 

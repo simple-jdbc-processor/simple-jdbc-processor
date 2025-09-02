@@ -19,11 +19,10 @@ public enum DialectEnums {
                     .setLeftEscape("[")
                     .setRightEscape("]")
     ),
-    ORACLE(
-            new DialectMetadata()
-                    .setLeftEscape("\\\"")
-                    .setRightEscape("\\\"")
-    ),
+    ORACLE(POSTGRES.getValue()),
+    DB2(POSTGRES.getValue()),
+    DERBY(POSTGRES.getValue() ),
+    H2(POSTGRES.getValue()),
     ;
 
     private final DialectMetadata value;
