@@ -46,4 +46,15 @@ public @interface SimpleJdbc {
      */
     boolean extendsSimpleJdbcRepository() default true;
 
+    /**
+     * 是否使用下划线
+     */
+    boolean useUnderLine() default true;
+
+    /**
+     * 是否对字段关键词转义 password =>`password`.
+     */
+    boolean escape() default false;
+
+
 }

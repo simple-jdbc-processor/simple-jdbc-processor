@@ -21,8 +21,18 @@ public enum DialectEnums {
     ),
     ORACLE(POSTGRES.getValue()),
     DB2(POSTGRES.getValue()),
-    DERBY(POSTGRES.getValue() ),
+    DERBY(POSTGRES.getValue()),
     H2(POSTGRES.getValue()),
+    MONGO(new DialectMetadata()
+            .setExampleJavaTemplatePath("templates/SimpleMongoExample.java")
+            .setRepositoryTemplatePath("templates/SimpleMongoRepository.java")
+            .setTypeHandlerTemplatePath("templates/SimpleMongoDefaultTypeHandler.java")
+    ),
+    ES(new DialectMetadata()
+            .setExampleJavaTemplatePath("templates/SimpleElasticSearchExample.java")
+            .setRepositoryTemplatePath("templates/SimpleElasticSearchRepository.java")
+            .setTypeHandlerTemplatePath("templates/SimpleElasticSearchTypeHandler.java")
+    ),
     ;
 
     private final DialectMetadata value;

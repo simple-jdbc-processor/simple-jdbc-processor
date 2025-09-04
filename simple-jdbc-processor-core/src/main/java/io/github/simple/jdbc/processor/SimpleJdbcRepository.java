@@ -3,6 +3,7 @@ package io.github.simple.jdbc.processor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public interface SimpleJdbcRepository<T, ID, Example> {
 
@@ -13,6 +14,8 @@ public interface SimpleJdbcRepository<T, ID, Example> {
     List<T> selectByPrimaryKeys(List<ID> ids);
 
     List<T> selectByExample(Example query);
+
+    void consumeByExample(Example query, Consumer<T> consumer);
 
     T selectOne(Example query);
 

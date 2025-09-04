@@ -175,6 +175,7 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             {{#metadata.columnMetadataList}}
             if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
                 decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", {{javaType}}.class);
+                continue;
             }
             {{/metadata.columnMetadataList}}
         }

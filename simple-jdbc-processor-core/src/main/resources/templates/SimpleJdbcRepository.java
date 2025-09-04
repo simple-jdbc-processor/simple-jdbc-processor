@@ -763,14 +763,17 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             if (criteria.getValue() != null) {
                 Object value = getDefaultTypeHandler().encode{{firstUpFieldName}}(({{javaType}}) criteria.getValue());
                 params.add(value);
+                return;
             }
             if (criteria.getSecondValue() != null) {
                 Object value = getDefaultTypeHandler().encode{{firstUpFieldName}}(({{javaType}}) criteria.getSecondValue());
                 params.add(value);
+                return;
             }
             if (criteria.getListValue() != null) {
                 List values = getDefaultTypeHandler().encode{{firstUpFieldName}}List((List<{{javaType}}>) criteria.getListValue());
                 params.addAll(values);
+                return;
             }
         }
         {{/metadata.columnMetadataList}}

@@ -89,7 +89,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                         mustache.execute(writer, scopes);
                     }
 
-                    if (example.shardTable()) {
+                    if (example.shardTable() && example.dialect() != DialectEnums.ES && example.dialect() != DialectEnums.MONGO) {
                         String shardRepositoryName = tableMetadata.getShardRepositoryClazzName();
                         JavaFileObject shardRepositoryjavaFileObject = filer.createSourceFile(shardRepositoryName);
 
@@ -144,12 +144,13 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                 .setDomainClazzName(clazzName)
                 .setExampleClazzName(exampleName)
                 .setPackageName(getPackageName(packageOf))
-                .setLeftEncode(dialect.getLeftEscape())
-                .setRightEncode(dialect.getRightEscape())
                 .setUseSpring(example.useSpring())
                 .setSlaveDataSources(Arrays.asList(example.slaveDataSources()))
                 .setDataSource(example.dataSource() == null || example.dataSource().isEmpty() ? null : example.dataSource());
-
+        if (example.escape()) {
+            tableMetadata.setLeftEncode(dialect.getLeftEscape())
+                    .setRightEncode(dialect.getRightEscape());
+        }
         String repositoryName = clazzName + "SimpleJdbcRepository";
         String shardRepositoryClassName = clazzName + "ShardSimpleJdbcRepository";
         String simpleJdbcDefaultTypeHandler = clazzName + "SimpleJdbcDefaultTypeHandler";
@@ -159,6 +160,9 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                 .setShardRepositoryClazzName(shardRepositoryClassName)
                 .setTableName(table != null ? table.name() : String.join("_",
                         CamelUtils.split(tableMetadata.getDomainClazzSimpleName(), true)));
+        if (!example.useUnderLine() && table == null) {
+            tableMetadata.setTableName(tableMetadata.getDomainClazzSimpleName());
+        }
         tableMetadata.setOriginTableName(tableMetadata.getTableName());
         Elements elementUtils = processingEnv.getElementUtils();
 
@@ -170,6 +174,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             String line;
             while ((line = reader.readLine()) != null) {
                 keywords.add(line.toLowerCase());
+                keywords.add(line);
             }
         }
 
@@ -199,10 +204,11 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                     .setPrimary(id != null);
 
 
-            if (column == null || "".equals(column.name())) {
-                columnMetadata.setColumnName(String.join("_", CamelUtils.split(name, true)));
+            if (example.useUnderLine()) {
+                if (column == null || "".equals(column.name())) {
+                    columnMetadata.setColumnName(String.join("_", CamelUtils.split(name, true)));
+                }
             }
-
             if (column != null && !"".equals(column.columnDefinition())) {
                 String jdbcType = JDBC_TYPE_MAPPING.get(column.columnDefinition().replaceAll("\\s+", " ").toUpperCase());
                 columnMetadata.setJdbcType(jdbcType != null ? jdbcType : column.columnDefinition());

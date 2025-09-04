@@ -45,8 +45,9 @@ public class DialectMetadata {
         return repositoryTemplatePath;
     }
 
-    public void setRepositoryTemplatePath(String repositoryTemplatePath) {
+    public DialectMetadata setRepositoryTemplatePath(String repositoryTemplatePath) {
         this.repositoryTemplatePath = repositoryTemplatePath;
+        return this;
     }
 
     public String getShardRepositoryTemplatePath() {
@@ -61,7 +62,8 @@ public class DialectMetadata {
         return typeHandlerTemplatePath;
     }
 
-    public void setTypeHandlerTemplatePath(String typeHandlerTemplatePath) {
+    public DialectMetadata setTypeHandlerTemplatePath(String typeHandlerTemplatePath) {
         this.typeHandlerTemplatePath = typeHandlerTemplatePath;
+        return this;
     }
 }
