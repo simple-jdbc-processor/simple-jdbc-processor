@@ -293,14 +293,13 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         for (List<{{metadata.exampleClazzName}}.Criteria> orCondition : all) {
             List<Bson> subFilters = new ArrayList<>();
             for ({{metadata.exampleClazzName}}.Criteria critery : orCondition) {
-
                 String column = critery.getColumn();
                 String condition = critery.getCondition();
                 {{#metadata.columnMetadataList}}
-                if("{{columnName}}".equals(column) || "{{fieldName}}".equals(column) || "{{originColumnName}}".equals(column)) {
-                    {{#primaryKey}}
+                if( "{{columnName}}".equals(column) || "{{fieldName}}".equals(column) || "{{originColumnName}}".equals(column)) {
+                    {{#primary}}
                     column = "_id";
-                    {{/primaryKey}}
+                    {{/primary}}
                     if (condition.equals(" = ")) {
                         subFilters.add(Filters.eq(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
                     } else if (condition.equals(" != ") || condition.equals(" <> ")) {
@@ -437,12 +436,13 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
     protected MongoDatabaseFactory getMongoDatabaseFactory(String databaseName) {
         MongoDatabaseFactory mongoDatabaseFactory = mongoDatabaseFactoryMap.get(databaseName);
-        if(mongoDatabaseFactory == null) {
-            for (Map.Entry<String, MongoDatabaseFactory> entry : mongoDatabaseFactoryMap.entrySet()) {
-                MongoDatabase mongoDatabase = entry.getValue().getMongoDatabase(databaseName);
-                if(mongoDatabase != null) {
-                    return entry.getValue();
-                }
+        if(mongoDatabaseFactory != null) {
+            return mongoDatabaseFactory;
+        }
+        for (Map.Entry<String, MongoDatabaseFactory> entry : mongoDatabaseFactoryMap.entrySet()) {
+            MongoDatabase mongoDatabase = entry.getValue().getMongoDatabase(databaseName);
+            if(mongoDatabase != null) {
+                return entry.getValue();
             }
         }
         throw new IllegalArgumentException("MongoDatabaseFactory not found for database " + databaseName);

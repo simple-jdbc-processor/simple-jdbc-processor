@@ -23,6 +23,9 @@ public enum DialectEnums {
     DB2(POSTGRES.getValue()),
     DERBY(POSTGRES.getValue()),
     H2(POSTGRES.getValue()),
+    SQLITE(POSTGRES.getValue()),
+    CASSANDRA(POSTGRES.getValue()),
+    DORIS(POSTGRES.getValue()),
     MONGO(new DialectMetadata()
             .setExampleJavaTemplatePath("templates/SimpleMongoExample.java")
             .setRepositoryTemplatePath("templates/SimpleMongoRepository.java")
