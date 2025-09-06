@@ -322,7 +322,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
         {{#metadata.primaryMetadata}}
         List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql.substring(0, sql.length() - 2), params);
-        for (int i = 0; i < ts.size(); i++) {
+        for (int i = 0; i < primaryKeys.size(); i++) {
             {{metadata.primaryMetadata.javaType}} primaryKey = primaryKeys.get(i);
             if (primaryKey > 0) {
                 ts.get(i).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
