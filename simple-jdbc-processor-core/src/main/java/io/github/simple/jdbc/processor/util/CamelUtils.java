@@ -40,4 +40,15 @@ public class CamelUtils {
         }
         return name;
     }
+
+    public static String firstLow(String name) {
+        if (name != null) {
+            if (name.length() == 1) {
+                return name.toLowerCase();
+            } else {
+                return name.substring(0, 1).toLowerCase() + name.substring(1);
+            }
+        }
+        return name;
+    }
 }

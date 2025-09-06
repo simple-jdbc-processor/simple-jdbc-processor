@@ -2,7 +2,6 @@ package {{metadata.packageName}};
 
 import com.mongodb.MongoClientSettings;
 import org.bson.BsonReader;
-import org.bson.BsonType;
 import org.bson.BsonWriter;
 import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
@@ -10,32 +9,103 @@ import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
+import org.bson.codecs.pojo.*;
 
-import java.sql.ResultSet;
-import java.util.List;
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.Transient;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.util.*;
 
 
 @SuppressWarnings("unchecked")
 public class {{metadata.typeHandlerClazzSimpleName}} implements Codec<{{metadata.domainClazzName}}>, CodecProvider {
 
-    private CodecRegistry defaultCodecRegistry = MongoClientSettings.getDefaultCodecRegistry();
+    private CodecRegistry codecRegistry;
 
-    private final CodecRegistry selftCodecRegistry;
+    private CodecRegistry selfCodecRegistry;
 
-    private Codec<{{metadata.primaryMetadata.javaType}}> primartCodec;
-
-    private Codec<String> stringCodec;
+    private Codec<{{metadata.domainClazzName}}> codec;
 
 
-    {{#metadata.columnMetadataList}}
-    private Codec<{{javaType}}> {{fieldName}}Codec;
-    {{/metadata.columnMetadataList}}
+    public {{metadata.typeHandlerClazzSimpleName}} () {
+        this(MongoClientSettings.getDefaultCodecRegistry());
+    }
+
+    public {{metadata.typeHandlerClazzSimpleName}}(CodecRegistry codecRegistry) {
+        this.codecRegistry = codecRegistry;
+        this.codec = createCodec(codecRegistry);
+        this.selfCodecRegistry = CodecRegistries.fromRegistries(CodecRegistries.fromProviders(this));
+    }
+
+    public Codec<{{metadata.domainClazzName}}> createCodec(CodecRegistry registry) {
+        List<Convention> conventions = new ArrayList<>(Conventions.DEFAULT_CONVENTIONS);
+        Map<String, String> namemap = new HashMap<>();
+        Set<String> ignore = new HashSet<>();
+        for (Field field : {{metadata.domainClazzName}}.class.getDeclaredFields()) {
+            Column column = field.getAnnotation(Column.class);
+            if (column != null) {
+                namemap.put(field.getName(), column.name());
+            }
+            Id id = field.getAnnotation(Id.class);
+            if (id != null) {
+                namemap.put("@Id", field.getName());
+            }
+            Transient t = field.getAnnotation(Transient.class);
+            if (t != null) {
+                ignore.add(field.getName());
+            }
+        }
+        conventions.add(new Convention() {
+            @Override
+            public void apply(ClassModelBuilder<?> classModelBuilder) {
+                for (String remove : ignore) {
+                    classModelBuilder.removeProperty(remove);
+                }
+                String idPropertyName = classModelBuilder.getIdPropertyName();
+                classModelBuilder.idPropertyName(namemap.getOrDefault("@Id", idPropertyName));
+                for (PropertyModelBuilder<?> propertyModelBuilder : classModelBuilder.getPropertyModelBuilders()) {
+                    String name = propertyModelBuilder.getName();
+                    if (name.equals(idPropertyName)) {
+                        continue;
+                    }
+                    String columnName = namemap.getOrDefault(name, name);
+                    propertyModelBuilder.readName(columnName);
+                    propertyModelBuilder.writeName(columnName);
+                }
+            }
+        });
+        PojoCodecProvider provider = PojoCodecProvider.builder()
+                .register(getEncoderClass())
+                .automatic(true)
+                .conventions(conventions)
+                .build();
+        return provider.get(getEncoderClass(), registry);
+    }
 
 
-    public {{metadata.typeHandlerClazzSimpleName}}() {
-        this.selftCodecRegistry = CodecRegistries.fromRegistries(CodecRegistries.fromProviders(this));
-        initCodec();
+    @Override
+    public {{metadata.domainClazzName}} decode(BsonReader reader, DecoderContext decoderContext) {
+        return codec.decode(reader, decoderContext);
+    }
+
+    @Override
+    public void encode(BsonWriter writer, {{metadata.domainClazzName}} value, EncoderContext encoderContext) {
+        codec.encode(writer, value, encoderContext);
+    }
+
+    public Object encode(String name,Object value) {
+        return value;
+    }
+
+    public List encodeList(String name,List value) {
+        return value;
+    }
+
+    @Override
+    public Class<{{metadata.domainClazzName}}> getEncoderClass() {
+        return {{metadata.domainClazzName}}.class;
     }
 
     @Override
@@ -43,124 +113,10 @@ public class {{metadata.typeHandlerClazzSimpleName}} implements Codec<{{metadata
         if (clazz == getEncoderClass()) {
             return (Codec<T>) this;
         }
-        return getDefaultCodecRegistry().get(clazz);
+        return codecRegistry.get(clazz);
     }
 
-    private synchronized void initCodec() {
-        this.primartCodec = getClassCodec({{metadata.primaryMetadata.javaType}}.class);
-        this.stringCodec = getClassCodec(String.class);
-        {{#metadata.columnMetadataList}}
-        this.{{fieldName}}Codec = getClassCodec({{javaType}}.class);
-        {{/metadata.columnMetadataList}}
+    public CodecRegistry getSelftCodecRegistry(){
+        return selfCodecRegistry;
     }
-
-    private <C> Codec<C> getClassCodec(Class<C> clazz) {
-        try {
-            if (clazz == getEncoderClass()) {
-                return (Codec<C>) this;
-            }
-            return getDefaultCodecRegistry().get(clazz);
-        } catch (Exception e) {
-            PojoCodecProvider provider = PojoCodecProvider.builder()
-                    .register(clazz)
-                    .build();
-            return provider.get(clazz, getDefaultCodecRegistry());
-        }
-    }
-
-    @Override
-    public {{metadata.domainClazzName}} decode(BsonReader reader, DecoderContext decoderContext) {
-        {{metadata.domainClazzName}} t = new {{metadata.domainClazzName}}();
-        reader.readStartDocument();
-        while (reader.readBsonType() != BsonType.END_OF_DOCUMENT) {
-            String fieldName = reader.readName();
-            if("_id".equals(fieldName)) {
-                decode{{metadata.primaryMetadata.firstUpFieldName}}(primartCodec, reader, decoderContext, t, fieldName, {{metadata.primaryMetadata.javaType}}.class);
-                continue;
-            }
-            {{#metadata.columnMetadataList}}
-            if ("{{columnName}}".equals(fieldName) || "{{fieldName}}".equals(fieldName) || "{{originColumnName}}".equals(fieldName)) {
-                decode{{firstUpFieldName}}({{fieldName}}Codec, reader, decoderContext, t, fieldName, {{javaType}}.class);
-                continue;
-            }
-            {{/metadata.columnMetadataList}}
-            reader.skipValue();
-        }
-        reader.readEndDocument();
-        return t;
-    }
-
-    @Override
-    public void encode(BsonWriter writer, {{metadata.domainClazzName}} value, EncoderContext encoderContext) {
-        writer.writeStartDocument();
-        {{#metadata.columnMetadataList}}
-        if (value.get{{firstUpFieldName}}() != null) {
-            {{#primary}}
-            writer.writeName("_id");
-            {{/primary}}
-            {{^primary}}
-            writer.writeName("{{columnName}}");
-            {{/primary}}
-            {{fieldName}}Codec.encode(writer, encode{{firstUpFieldName}}(value.get{{firstUpFieldName}}()), encoderContext);
-        }
-        {{/metadata.columnMetadataList}}
-        writer.writeEndDocument();
-    }
-
-
-    {{#metadata.columnMetadataList}}
-    public void decode{{firstUpFieldName}}(Codec<{{javaType}}> codec, BsonReader reader, DecoderContext decoderContext, {{metadata.domainClazzName}} t, String column, Class<{{javaType}}> targetType) {
-        {{#isEnums}}
-        String value = reader.readString();
-        if(value == null){
-            return;
-        }
-        t.set{{firstUpFieldName}}(Enum.valueOf(targetType, value));
-        {{/isEnums}}
-        {{^isEnums}}
-        {{javaType}} value = codec.decode(reader, decoderContext);
-        t.set{{firstUpFieldName}}(value);
-        {{/isEnums}}
-    }
-
-    {{#isEnums}}
-    public String encode{{firstUpFieldName}}({{javaType}} value) {
-        return value == null ? null: String.valueOf(value);
-    }
-
-    public List<String> encode{{firstUpFieldName}}List(List<{{javaType}}> values) {
-        return values.stream().map(String::valueOf).collect(java.util.stream.Collectors.toList());
-    }
-    {{/isEnums}}
-    {{^isEnums}}
-    public {{javaType}} encode{{firstUpFieldName}}({{javaType}} value) {
-        return value;
-    }
-
-    public List<{{javaType}}> encode{{firstUpFieldName}}List(List<{{javaType}}> values) {
-        return values;
-    }
-    {{/isEnums}}
-
-    {{/metadata.columnMetadataList}}
-
-    @Override
-    public Class<{{metadata.domainClazzName}}> getEncoderClass() {
-        return {{metadata.domainClazzName}}.class;
-    }
-
-    public CodecRegistry getDefaultCodecRegistry() {
-        return this.defaultCodecRegistry == null ? MongoClientSettings.getDefaultCodecRegistry() : this.defaultCodecRegistry;
-    }
-
-    public void setDefaultCodecRegistry(CodecRegistry defaultCodecRegistry) {
-        this.defaultCodecRegistry = defaultCodecRegistry;
-        initCodec();
-    }
-
-    public CodecRegistry getSelftCodecRegistry() {
-        return selftCodecRegistry;
-    }
-
-
 }

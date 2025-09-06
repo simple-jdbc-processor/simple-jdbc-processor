@@ -33,18 +33,18 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
     private {{metadata.typeHandlerClazzName}} defaultTypeHandler = new {{metadata.typeHandlerClazzName}}();
 
-    @Override
+    
     public {{metadata.domainClazzName}} selectByPrimaryKey({{metadata.primaryMetadata.javaType}} id) {
         Bson filter = Filters.eq("_id", id);
         return getCollection().find(filter).first();
     }
 
-    @Override
+    
     public {{metadata.domainClazzName}} selectByPrimaryKeyForUpdate({{metadata.primaryMetadata.javaType}} id) {
         return selectByPrimaryKey(id);
     }
 
-    @Override
+    
     public List<{{metadata.domainClazzName}}> selectByPrimaryKeys(List<{{metadata.primaryMetadata.javaType}}> ids) {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
@@ -56,7 +56,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return result;
     }
 
-    @Override
+    
     public List<{{metadata.domainClazzName}}> selectByExample({{metadata.exampleClazzName}} example) {
         Bson filter = buildFilterFromExample(example);
         FindIterable<{{metadata.domainClazzName}}> iterable;
@@ -91,14 +91,14 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
     }
 
-    @Override
+    
     public {{metadata.domainClazzName}} selectOne({{metadata.exampleClazzName}} example) {
         example.limit(1);
         List<{{metadata.domainClazzName}}> ts = selectByExample(example);
         return ts.isEmpty() ? null : ts.get(0);
     }
 
-    @Override
+    
     public List<{{metadata.domainClazzName}}> selectAll() {
         FindIterable<{{metadata.domainClazzName}}> iterable = getCollection().find();
         List<{{metadata.domainClazzName}}> result = new ArrayList<>();
@@ -106,24 +106,24 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return result;
     }
 
-    @Override
+    
     public void insert({{metadata.domainClazzName}} t) {
         getCollection().insertOne(t);
     }
 
-    @Override
+    
     public void insertSelective({{metadata.domainClazzName}} t) {
         insert(t);
     }
 
-    @Override
+    
     public void upsertSelective({{metadata.domainClazzName}} t) {
         Bson filter = Filters.eq("_id", t.get{{metadata.primaryMetadata.firstUpFieldName}}());
         Bson update = buildUpdate(t, true);
         getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
     }
 
-    @Override
+    
     public void insertBatch(List<{{metadata.domainClazzName}}> ts) {
         if (ts == null || ts.isEmpty()) {
             return;
@@ -131,7 +131,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         getCollection().insertMany(ts);
     }
 
-    @Override
+    
     public long countByExample({{metadata.exampleClazzName}} example) {
         Bson filter = buildFilterFromExample(example);
         if (filter == null) {
@@ -140,14 +140,14 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return getCollection().countDocuments(filter);
     }
 
-    @Override
+    
     public int updateByPrimaryKeySelective({{metadata.domainClazzName}} t) {
         Bson filter = Filters.eq("_id", t.get{{metadata.primaryMetadata.firstUpFieldName}}());
         Bson update = buildUpdate(t, true);
         return (int) getCollection().updateOne(filter, update).getModifiedCount();
     }
 
-    @Override
+    
     public int updateByPrimaryKey({{metadata.domainClazzName}} t) {
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null) {
             return 0;
@@ -157,7 +157,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return getCollection().updateOne(filter, update).getModifiedCount() > 0 ? 1 : 0;
     }
 
-    @Override
+    
     public int updateByExampleSelective({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null) {
             return 0;
@@ -170,7 +170,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return (int) getCollection().updateMany(filter, update).getModifiedCount();
     }
 
-    @Override
+    
     public int updateByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         Bson filter = buildFilterFromExample(example);
         if (filter == null) {
@@ -180,13 +180,13 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return (int) getCollection().updateMany(filter, update).getModifiedCount();
     }
 
-    @Override
+    
     public int deleteByPrimaryKey({{metadata.primaryMetadata.javaType}} id) {
         Bson filter = Filters.eq("_id", id);
         return getCollection().deleteOne(filter).getDeletedCount() > 0 ? 1 : 0;
     }
 
-    @Override
+    
     public int deleteByPrimaryKeys(List<{{metadata.primaryMetadata.javaType}}> ids) {
         if (ids == null || ids.isEmpty()) {
             return 0;
@@ -195,7 +195,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return (int) getCollection().deleteMany(filter).getDeletedCount();
     }
 
-    @Override
+    
     public int deleteByExample({{metadata.exampleClazzName}} example) {
         Bson filter = buildFilterFromExample(example);
         if (filter == null) {
@@ -204,13 +204,13 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return (int) getCollection().deleteMany(filter).getDeletedCount();
     }
 
-    @Override
+    
     public boolean existsById({{metadata.primaryMetadata.javaType}} id) {
         Bson filter = Filters.eq("_id", id);
         return getCollection().countDocuments(filter) > 0;
     }
 
-    @Override
+    
     public boolean existsByExample({{metadata.exampleClazzName}} example) {
         Bson filter = buildFilterFromExample(example);
         if (filter == null) {
@@ -219,7 +219,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return getCollection().countDocuments(filter) > 0;
     }
 
-    @Override
+    
     public List<{{metadata.domainClazzName}}> selectByPrimaryKeysWithSorted(List<{{metadata.primaryMetadata.javaType}}> ids) {
         List<{{metadata.domainClazzName}}> ts = selectByPrimaryKeys(ids);
         // 按原始ID列表顺序排序
@@ -234,7 +234,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return sortTs;
     }
 
-    @Override
+    
     public Map<{{metadata.primaryMetadata.javaType}}, {{metadata.domainClazzName}}> mapById(List<{{metadata.primaryMetadata.javaType}}> ids) {
         List<{{metadata.domainClazzName}}> ts = selectByPrimaryKeys(ids);
         return ts.stream()
@@ -278,7 +278,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return aggregateOne(null, pipeline, function);
     }
 
-    private Bson buildFilterFromExample({{metadata.exampleClazzName}} example) {
+    protected Bson buildFilterFromExample({{metadata.exampleClazzName}} example) {
         List<List<{{metadata.exampleClazzName}}.Criteria>> all;
         if (example.getOrConditions() != null && !example.getOrConditions().isEmpty()) {
             all = new ArrayList<>(example.getOrConditions());
@@ -295,44 +295,37 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             for ({{metadata.exampleClazzName}}.Criteria critery : orCondition) {
                 String column = critery.getColumn();
                 String condition = critery.getCondition();
-                {{#metadata.columnMetadataList}}
-                if( "{{columnName}}".equals(column) || "{{fieldName}}".equals(column) || "{{originColumnName}}".equals(column)) {
-                    {{#primary}}
-                    column = "_id";
-                    {{/primary}}
-                    if (condition.equals(" = ")) {
-                        subFilters.add(Filters.eq(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                    } else if (condition.equals(" != ") || condition.equals(" <> ")) {
-                        subFilters.add(Filters.ne(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                    } else if (condition.equals(" >= ")) {
-                        subFilters.add(Filters.gte(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                    } else if (condition.equals(" =< ")) {
-                        subFilters.add(Filters.lte(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                    } else if (condition.equals(" > ")) {
-                        subFilters.add(Filters.gt(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                    } else if (condition.equals(" < ")) {
-                        subFilters.add(Filters.lt(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                    } else if (condition.equals(" like ")) {
-                        subFilters.add(Filters.regex(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue()).toString()));
-                    } else if (condition.equals(" between ")) {
-                        subFilters.add(Filters.gte(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                        subFilters.add(Filters.lte(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getSecondValue())));
-                    } else if (condition.equals(" not between ")) {
-                        subFilters.add(Filters.lt(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue())));
-                        subFilters.add(Filters.gt(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getSecondValue())));
-                    } else if (condition.equals(" in ")) {
-                        subFilters.add(Filters.in(column, defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{javaType}}>)critery.getListValue())));
-                    } else if (condition.equals(" not in ")) {
-                        subFilters.add(Filters.nin(column, defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{javaType}}>)critery.getListValue())));
-                    } else if (condition.equals(" not like ")) {
-                        subFilters.add(Filters.not(Filters.regex(column, defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}})critery.getValue()).toString())));
-                    } else if (condition.equals(" is null ")) {
-                        subFilters.add(Filters.eq(column, null));
-                    } else if (condition.equals(" is not null ")) {
-                        subFilters.add(Filters.ne(column, null));
-                    }
+                if (condition.equals(" = ")) {
+                    subFilters.add(Filters.eq(column, defaultTypeHandler.encode(column,critery.getValue())));
+                } else if (condition.equals(" != ") || condition.equals(" <> ")) {
+                    subFilters.add(Filters.ne(column, defaultTypeHandler.encode(column,critery.getValue())));
+                } else if (condition.equals(" >= ")) {
+                    subFilters.add(Filters.gte(column, defaultTypeHandler.encode(column,critery.getValue())));
+                } else if (condition.equals(" <= ")) {
+                    subFilters.add(Filters.lte(column, defaultTypeHandler.encode(column,critery.getValue())));
+                } else if (condition.equals(" > ")) {
+                    subFilters.add(Filters.gt(column, defaultTypeHandler.encode(column,critery.getValue())));
+                } else if (condition.equals(" < ")) {
+                    subFilters.add(Filters.lt(column, defaultTypeHandler.encode(column,critery.getValue())));
+                } else if (condition.equals(" like ")) {
+                    subFilters.add(Filters.regex(column, (String) defaultTypeHandler.encode(column,critery.getValue().toString())));
+                } else if (condition.equals(" between ")) {
+                    subFilters.add(Filters.gte(column, defaultTypeHandler.encode(column,critery.getValue())));
+                    subFilters.add(Filters.lte(column, defaultTypeHandler.encode(column,critery.getSecondValue())));
+                } else if (condition.equals(" not between ")) {
+                    subFilters.add(Filters.lt(column, defaultTypeHandler.encode(column,critery.getValue())));
+                    subFilters.add(Filters.gt(column, defaultTypeHandler.encode(column,critery.getSecondValue())));
+                } else if (condition.equals(" in ")) {
+                    subFilters.add(Filters.in(column, defaultTypeHandler.encodeList(column,critery.getListValue())));
+                } else if (condition.equals(" not in ")) {
+                    subFilters.add(Filters.nin(column, defaultTypeHandler.encodeList(column,critery.getListValue())));
+                } else if (condition.equals(" not like ")) {
+                    subFilters.add(Filters.not(Filters.regex(column,(String) defaultTypeHandler.encode(column,critery.getValue().toString()))));
+                } else if (condition.equals(" is null ")) {
+                    subFilters.add(Filters.eq(column, null));
+                } else if (condition.equals(" is not null ")) {
+                    subFilters.add(Filters.ne(column, null));
                 }
-                {{/metadata.columnMetadataList}}
             }
             filters.add(Filters.and(subFilters));
         }
@@ -460,7 +453,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             String name = factory.getMongoDatabase().getName();
             this.mongoDatabaseFactoryMap.put(name, factory);
             if (this.databaseName.equalsIgnoreCase(name)) {
-                this.defaultTypeHandler.setDefaultCodecRegistry(factory.getCodecRegistry());
+                this.defaultTypeHandler = new {{metadata.typeHandlerClazzName}}(factory.getCodecRegistry());
             }
         }
     }

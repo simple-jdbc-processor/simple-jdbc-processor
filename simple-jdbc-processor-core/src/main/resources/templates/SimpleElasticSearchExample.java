@@ -17,8 +17,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     private String orderByClause;
 
-    private List<List<Criteria>> orConditions;
-
     private List<String> columns;
 
     private List<Criteria> criteries = new ArrayList<>();
@@ -28,12 +26,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
     public static {{metadata.exampleClazzSimpleName}} create(){
         return new {{metadata.exampleClazzSimpleName}}();
     }
-    
-    public {{metadata.exampleClazzSimpleName}} distinct() {
-        this.distinct = true;
-        return this;
-    }
-
 
     public {{metadata.exampleClazzSimpleName}} columns(List<String> columns) {
         this.columns = columns;
@@ -56,14 +48,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} or() {
-        if (this.orConditions == null) {
-            this.orConditions = new ArrayList<>();
-        }
-        this.orConditions.add(this.criteries);
-        this.criteries = new ArrayList<>();
-        return this;
-    }
 {{#metadata.columnMetadataList}}
 
     public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}IsNull() {
@@ -141,6 +125,16 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}Match(String value) {
+        criteries.add(new Criteria("{{columnName}}", " match ", value));
+        return this;
+    }
+
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}MatchPhase(String value) {
+        criteries.add(new Criteria("{{columnName}}", " matchPhase ", value));
+        return this;
+    }
+
 {{/metadata.columnMetadataList}}
 
     public {{metadata.exampleClazzSimpleName}} orderBy(String orderByClause) {
@@ -174,11 +168,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         }
         this.limit = Arrays.asList((page - 1) * size, size);
         return this;
-    }
-
-
-    public List<List<Criteria>> getOrConditions() {
-        return this.orConditions;
     }
 
     public List<Criteria> getCriteries() {

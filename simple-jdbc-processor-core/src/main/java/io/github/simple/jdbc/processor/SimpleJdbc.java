@@ -47,12 +47,12 @@ public @interface SimpleJdbc {
     boolean extendsSimpleJdbcRepository() default true;
 
     /**
-     * 是否使用下划线
+     * 在没有@Column注解的情况下是否使用下划线,只针对jdbc数据库有效,MongoDB,ES等NoSQL数据库无效
      */
     boolean useUnderLine() default true;
 
     /**
-     * 是否对字段关键词转义 password =>`password`.
+     * 是否对字段关键词转义 password =>`password`,只针对jdbc数据库有效,MongoDB,ES等NoSQL数据库无效
      */
     boolean escape() default false;
 

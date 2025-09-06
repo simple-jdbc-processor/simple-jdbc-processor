@@ -34,6 +34,10 @@ public class ColumnMetadata {
 
     private String defaultValue = "null";
 
+    private String fullJavaType;
+
+    private boolean isCollection;
+
     public String getFieldName() {
         return fieldName;
     }
@@ -75,24 +79,39 @@ public class ColumnMetadata {
     public ColumnMetadata setJavaType(String javaType) {
         String[] split = javaType.split("\\s+");
         this.javaType = split[split.length - 1];
+        this.fullJavaType = javaType;
+        int start = javaType.lastIndexOf("<");
+        int end = javaType.indexOf(">");
+        if (start != -1 && end != -1) {
+            this.javaType = javaType.substring(start + 1, end);
+        }
         this.stringType = "java.lang.String".equals(this.javaType);
         if (javaType.toLowerCase().contains("string")) {
             stringType = true;
         }
-        if(javaType.equalsIgnoreCase("int")||javaType.equalsIgnoreCase("java.lang.Integer")) {
+        if (javaType.equalsIgnoreCase("int") || javaType.equalsIgnoreCase("java.lang.Integer")) {
             this.javaType = "Integer";
             defaultValue = "0";
         }
-        if(javaType.equalsIgnoreCase("long")||javaType.equalsIgnoreCase("java.lang.Long")) {
+        if (javaType.equalsIgnoreCase("long") || javaType.equalsIgnoreCase("java.lang.Long")) {
             this.javaType = "Long";
             this.defaultValue = "0L";
         }
-        if(javaType.equalsIgnoreCase("short")||javaType.equalsIgnoreCase("java.lang.Short")) {
+        if (javaType.equalsIgnoreCase("short") || javaType.equalsIgnoreCase("java.lang.Short")) {
             this.javaType = "Short";
             this.defaultValue = "0";
         }
-        if(javaType.equalsIgnoreCase("boolean")||javaType.equalsIgnoreCase("java.lang.Boolean")) {
+        if (javaType.equalsIgnoreCase("boolean") || javaType.equalsIgnoreCase("java.lang.Boolean")) {
             this.javaType = "Boolean";
+        }
+        if (fullJavaType.contains("java.util.List")
+                || fullJavaType.contains("java.util.ArrayList")
+                || fullJavaType.contains("java.util.Collection")
+                || fullJavaType.contains("java.util.Set")
+                || fullJavaType.contains("java.util.HashSet")
+                || fullJavaType.contains("java.util.Map")
+                || fullJavaType.contains("java.util.HashMap")) {
+            setCollection(true);
         }
         return this;
     }
@@ -196,5 +215,21 @@ public class ColumnMetadata {
 
     public String getDefaultValue() {
         return defaultValue;
+    }
+
+    public void setFullJavaType(String fullJavaType) {
+        this.fullJavaType = fullJavaType;
+    }
+
+    public String getFullJavaType() {
+        return fullJavaType;
+    }
+
+    public boolean isCollection() {
+        return isCollection;
+    }
+
+    public void setCollection(boolean collection) {
+        isCollection = collection;
     }
 }

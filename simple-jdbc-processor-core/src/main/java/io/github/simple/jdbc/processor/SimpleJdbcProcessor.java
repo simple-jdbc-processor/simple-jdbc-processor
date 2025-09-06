@@ -15,10 +15,8 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.util.Elements;
 import javax.persistence.*;
@@ -89,7 +87,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                         mustache.execute(writer, scopes);
                     }
 
-                    if (example.shardTable() && example.dialect() != DialectEnums.ES && example.dialect() != DialectEnums.MONGO) {
+                    if (example.shardTable() && example.dialect() != DialectEnums.ELASTICSEARCH && example.dialect() != DialectEnums.MONGO) {
                         String shardRepositoryName = tableMetadata.getShardRepositoryClazzName();
                         JavaFileObject shardRepositoryjavaFileObject = filer.createSourceFile(shardRepositoryName);
 
@@ -151,6 +149,10 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             tableMetadata.setLeftEncode(dialect.getLeftEscape())
                     .setRightEncode(dialect.getRightEscape());
         }
+        boolean useUnderLine = example.useUnderLine();
+        if (example.dialect() == DialectEnums.ELASTICSEARCH || example.dialect() == DialectEnums.MONGO) {
+            useUnderLine = false;
+        }
         String repositoryName = clazzName + "SimpleJdbcRepository";
         String shardRepositoryClassName = clazzName + "ShardSimpleJdbcRepository";
         String simpleJdbcDefaultTypeHandler = clazzName + "SimpleJdbcDefaultTypeHandler";
@@ -160,8 +162,8 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                 .setShardRepositoryClazzName(shardRepositoryClassName)
                 .setTableName(table != null ? table.name() : String.join("_",
                         CamelUtils.split(tableMetadata.getDomainClazzSimpleName(), true)));
-        if (!example.useUnderLine() && table == null) {
-            tableMetadata.setTableName(tableMetadata.getDomainClazzSimpleName());
+        if (!useUnderLine && table == null) {
+            tableMetadata.setTableName(CamelUtils.firstLow(tableMetadata.getDomainClazzSimpleName()));
         }
         tableMetadata.setOriginTableName(tableMetadata.getTableName());
         Elements elementUtils = processingEnv.getElementUtils();
@@ -196,22 +198,18 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             Id id = member.getAnnotation(Id.class);
             Column column = member.getAnnotation(Column.class);
             GeneratedValue generatedValue = member.getAnnotation(GeneratedValue.class);
-            Version version = member.getAnnotation(Version.class);
             ColumnMetadata columnMetadata = new ColumnMetadata();
             member.asType().accept(domainTypeVisitor, columnMetadata);
             columnMetadata.setFieldName(name)
+                    .setColumnName(name)
                     .setUseGeneratedKeys(generatedValue != null)
                     .setPrimary(id != null);
 
 
-            if (example.useUnderLine()) {
+            if (useUnderLine) {
                 if (column == null || "".equals(column.name())) {
                     columnMetadata.setColumnName(String.join("_", CamelUtils.split(name, true)));
                 }
-            }
-            if (column != null && !"".equals(column.columnDefinition())) {
-                String jdbcType = JDBC_TYPE_MAPPING.get(column.columnDefinition().replaceAll("\\s+", " ").toUpperCase());
-                columnMetadata.setJdbcType(jdbcType != null ? jdbcType : column.columnDefinition());
             }
 
             if (column != null && !"".equals(column.name())) {
@@ -221,27 +219,12 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             if (column != null) {
                 columnMetadata.setInsertable(column.insertable());
                 columnMetadata.setUpdatable(column.updatable());
-                columnMetadata.setVersion(version != null);
             }
 
-            if (id != null) {
+            if (id != null || "_id".equalsIgnoreCase(name)) {
+                columnMetadata.setPrimary(true);
                 tableMetadata.setPrimaryMetadata(columnMetadata);
             }
-
-            Convert annotation = member.getAnnotation(Convert.class);
-            if (annotation != null) {
-                String typeHandler = annotation.attributeName();
-                if (typeHandler.isEmpty()) {
-                    try {
-                        typeHandler = annotation.converter().getName();
-                    } catch (MirroredTypeException mirroredTypeException) {
-                        String errorMessage = mirroredTypeException.getLocalizedMessage();
-                        typeHandler = errorMessage.substring(errorMessage.lastIndexOf(" ") + 1);
-                    }
-                }
-                columnMetadata.setTypeHandler(typeHandler);
-            }
-
 
             columnMetadata.setOriginColumnName(columnMetadata.getColumnName());
 
@@ -251,11 +234,24 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             }
             String docComment = elementUtils.getDocComment(member);
             columnMetadata.setJavaDoc(docComment);
-            tableMetadata.getColumnMetadataList().add(columnMetadata);
+            // 如果没有@Column注解,解析jsonProperty,BjsonProerty注解
+            if (column == null) {
+                extractAnnotationValues(member, example.dialect(), columnMetadata, tableMetadata.getColumnMetadataList());
+                if (columnMetadata.isPrimary()) {
+                    tableMetadata.setPrimaryMetadata(columnMetadata);
+                }
+            } else {
+                tableMetadata.getColumnMetadataList().add(columnMetadata);
+            }
         }
 
         if (tableMetadata.getPrimaryMetadata() == null && !tableMetadata.getColumnMetadataList().isEmpty()) {
-            tableMetadata.setPrimaryMetadata(tableMetadata.getColumnMetadataList().get(0));
+            ColumnMetadata columnMetadata = tableMetadata.getColumnMetadataList().get(0);
+            columnMetadata.setPrimary(true);
+            if (example.dialect() == DialectEnums.MONGO) {
+                columnMetadata.setColumnName("_id");
+            }
+            tableMetadata.setPrimaryMetadata(columnMetadata);
         }
 
         String columns = tableMetadata.getColumnMetadataList()
@@ -264,25 +260,6 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                 .collect(Collectors.joining(", "));
 
         return tableMetadata.setColumns(columns);
-    }
-
-
-    private static final Map<String, String> JDBC_TYPE_MAPPING = new HashMap<>();
-
-    static {
-        JDBC_TYPE_MAPPING.put("INT", "INTEGER");
-        JDBC_TYPE_MAPPING.put("INT UNSIGNED", "INTEGER");
-        JDBC_TYPE_MAPPING.put("SMALLINT UNSIGNED", "SMALLINT");
-        JDBC_TYPE_MAPPING.put("BIGINT UNSIGNED", "BIGINT");
-        JDBC_TYPE_MAPPING.put("DOUBLE UNSIGNED", "DOUBLE");
-        JDBC_TYPE_MAPPING.put("FLOAT UNSIGNED", "DOUBLE");
-        JDBC_TYPE_MAPPING.put("DECIMAL UNSIGNED", "DECIMAL");
-        JDBC_TYPE_MAPPING.put("TINY UNSIGNED", "TINY");
-        JDBC_TYPE_MAPPING.put("TEXT", "LONGVARCHAR");
-        JDBC_TYPE_MAPPING.put("TINYTEXT", "VARCHAR");
-        JDBC_TYPE_MAPPING.put("MEDIUMTEXT", "LONGVARCHAR");
-        JDBC_TYPE_MAPPING.put("LONGTEXT", "LONGVARCHAR");
-        JDBC_TYPE_MAPPING.put("DATETIME", "TIMESTAMP");
     }
 
 
@@ -295,5 +272,66 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
+    }
+
+    /**
+     * 动态获取注解值（不依赖具体的 Column 类）
+     */
+    private void extractAnnotationValues(Element currentElement, DialectEnums dialect, ColumnMetadata columnMetadata, List<ColumnMetadata> columnMetadataList) {
+        if (currentElement == null) {
+            return;
+        }
+        boolean add = true;
+        // 1. 遍历元素上的所有注解
+        for (AnnotationMirror annotationMirror : currentElement.getAnnotationMirrors()) {
+            DeclaredType annotationType = annotationMirror.getAnnotationType();
+            TypeElement annotationElement = (TypeElement) annotationType.asElement();
+            if (annotationElement == null) {
+                continue;
+            }
+
+            String annotationName = annotationElement.getSimpleName().toString();
+
+            if ("JsonIgnore".equalsIgnoreCase(annotationName) || "BsonIgnore".equalsIgnoreCase(annotationName)) {
+                add = false;
+            }
+            if ("BsonProperty".equalsIgnoreCase(annotationName) || "JsonProperty".equalsIgnoreCase(annotationName)) {
+                // 3. 提取注解的属性值（如 "name"、"length"）
+                for (Element attr : annotationElement.getEnclosedElements()) {
+                    if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
+                        String attrName = attr.getSimpleName().toString();
+                        // 获取属性值
+                        Object attrValue = getAnnotationValue(annotationMirror, attrName);
+
+                        // 4. 设置到 ColumnMetadata 中
+                        if ("value".equals(attrName) && attrValue != null) {
+                            columnMetadata.setColumnName(attrValue.toString());
+                        }
+                    }
+                }
+            }
+            if ("BsonId".equalsIgnoreCase(annotationName)) {
+                columnMetadata.setPrimary(true);
+                columnMetadata.setColumnName("_id");
+                columnMetadata.setOriginColumnName("_id");
+            }
+        }
+
+        if (add) {
+            columnMetadataList.add(columnMetadata);
+        }
+    }
+
+    /**
+     * 获取注解属性的值
+     */
+    private Object getAnnotationValue(AnnotationMirror annotationMirror, String attrName) {
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
+                annotationMirror.getElementValues().entrySet()) {
+            if (entry.getKey().getSimpleName().toString().equals(attrName)) {
+                return entry.getValue().getValue(); // 返回属性值（如字符串、数字等）
+            }
+        }
+        return null;
     }
 }

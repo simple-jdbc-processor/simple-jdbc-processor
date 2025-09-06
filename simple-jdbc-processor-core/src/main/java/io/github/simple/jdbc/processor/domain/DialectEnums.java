@@ -31,10 +31,10 @@ public enum DialectEnums {
             .setRepositoryTemplatePath("templates/SimpleMongoRepository.java")
             .setTypeHandlerTemplatePath("templates/SimpleMongoDefaultTypeHandler.java")
     ),
-    ES(new DialectMetadata()
+    ELASTICSEARCH(new DialectMetadata()
             .setExampleJavaTemplatePath("templates/SimpleElasticSearchExample.java")
             .setRepositoryTemplatePath("templates/SimpleElasticSearchRepository.java")
-            .setTypeHandlerTemplatePath("templates/SimpleElasticSearchTypeHandler.java")
+            .setTypeHandlerTemplatePath("templates/SimpleElasticSearchDefaultTypeHandler.java")
     ),
     ;
 

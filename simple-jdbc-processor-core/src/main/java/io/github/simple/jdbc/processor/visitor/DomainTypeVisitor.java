@@ -2,9 +2,9 @@ package io.github.simple.jdbc.processor.visitor;
 
 import io.github.simple.jdbc.processor.domain.ColumnMetadata;
 
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.*;
+import java.util.Map;
 
 public class DomainTypeVisitor implements TypeVisitor<DomainTypeVisitor, ColumnMetadata> {
 
@@ -86,4 +86,7 @@ public class DomainTypeVisitor implements TypeVisitor<DomainTypeVisitor, ColumnM
     public DomainTypeVisitor visitIntersection(IntersectionType t, ColumnMetadata columnMetadata) {
         return this;
     }
+
+
+
 }
