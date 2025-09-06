@@ -300,7 +300,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         getDefaultTypeHandler().encode(params, t);
         {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(insertSql, params);
-        if (primaryKey > 0) {
+        if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata}}
@@ -322,12 +322,14 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
         {{#metadata.primaryMetadata}}
         List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql.substring(0, sql.length() - 2), params);
-        for (int i = 0; i < primaryKeys.size(); i++) {
-            {{metadata.primaryMetadata.javaType}} primaryKey = primaryKeys.get(i);
-            if (primaryKey > 0) {
-                ts.get(i).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
+        int index = 0;
+        for (int i = 0; i < ts.size(); i++) {
+            {{metadata.domainClazzName}} t = ts.get(i);
+            if(t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null){
+                ts.get(index).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKeys.get(index));
+                index++;
             }
-            getDefaultTypeHandler().afterInsert(ts.get(i));
+            getDefaultTypeHandler().afterInsert(t);
         }
         {{/metadata.primaryMetadata}}
     }
@@ -351,7 +353,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
         {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
-        if (primaryKey > 0) {
+        if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata}}
@@ -380,7 +382,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
         {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
-        if (primaryKey > 0) {
+        if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata}}
@@ -408,7 +410,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
         {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
-        if (primaryKey > 0) {
+        if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata}}
