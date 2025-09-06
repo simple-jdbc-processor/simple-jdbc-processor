@@ -1,5 +1,6 @@
 package {{metadata.packageName}};
 
+
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
@@ -12,6 +13,7 @@ import co.elastic.clients.elasticsearch.core.get.GetResult;
 import co.elastic.clients.elasticsearch.core.mget.MultiGetResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.core.search.SourceFilter;
+import co.elastic.clients.json.JsonData;
 import co.elastic.clients.util.ObjectBuilder;
 import io.github.simple.jdbc.processor.SimpleJdbcRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +27,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+
 @SuppressWarnings("unchecked")
 public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdbcRepository}}implements io.github.simple.jdbc.processor.SimpleJdbcRepository<{{metadata.domainClazzSimpleName}}, {{metadata.primaryMetadata.javaType}}, {{metadata.exampleClazzSimpleName}}> {{/metadata.extendsSimpleJdbcRepository}} {
 
-    private final String indexName = "{{metadata.indexName}}";
+    private String indexName = "{{metadata.tableName}}";
 
     protected ElasticsearchClient elasticsearchClient;
 
@@ -268,7 +271,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         UpdateByQueryRequest request = UpdateByQueryRequest.of(u -> u
                 .index(indexName)
                 .query(q -> buildQueryFromExample(q, query))
-                .script(s -> s.source(buildUpdateScript(t)))
+                .script(s -> s.source(buildUpdateScript(t)).params(buildUpdateScriptParams(t)))
         );
 
         try {
@@ -483,6 +486,16 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return String.join("; ", updates);
     }
 
+    private Map<String, JsonData> buildUpdateScriptParams({{metadata.domainClazzName}} t) {
+        Map<String, JsonData> params = new HashMap<>();
+        {{#metadata.columnMetadataList}}
+        if (t.get{{firstUpFieldName}}() != null) {
+            params.put("{{columnName}}", toJsonData(t.get{{firstUpFieldName}}()));
+        }
+        {{/metadata.columnMetadataList}}
+        return params;
+    }
+
     protected double toDouble(Object value) {
         if (value instanceof Number) {
             return ((Number) value).doubleValue();
@@ -497,6 +510,17 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return Double.parseDouble(value.toString());
     }
 
+    protected JsonData toJsonData(Object value) {
+        if (value instanceof Date) {
+            return JsonData.of(((Date) value).getTime());
+        }
+        if (value instanceof LocalDateTime) {
+            LocalDateTime localDateTime = (LocalDateTime) value;
+            return JsonData.of(localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().get{{metadata.primaryMetadata.firstUpFieldName}}())).toEpochMilli());
+        }
+        return JsonData.of(value);
+    }
+
     protected FieldValue toFieldValue(Object value) {
         return FieldValue.of(value);
     }
@@ -508,6 +532,10 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
     @Autowired
     public void setElasticsearchClient(ElasticsearchClient elasticsearchClient) {
         this.elasticsearchClient = elasticsearchClient;
+    }
+
+    public void setTableName(String tableName) {
+        this.indexName = tableName;
     }
 
 }
