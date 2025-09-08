@@ -17,7 +17,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.util.Elements;
 import javax.persistence.*;
 import javax.tools.Diagnostic;
@@ -165,6 +164,10 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
         if (!useUnderLine && table == null) {
             tableMetadata.setTableName(CamelUtils.firstLow(tableMetadata.getDomainClazzSimpleName()));
         }
+        String mongoCollectionName = extraDocumentName(element);
+        if (mongoCollectionName != null) {
+            tableMetadata.setTableName(mongoCollectionName);
+        }
         tableMetadata.setOriginTableName(tableMetadata.getTableName());
         Elements elementUtils = processingEnv.getElementUtils();
 
@@ -274,6 +277,35 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
         return SourceVersion.latestSupported();
     }
 
+    private String extraDocumentName(Element currentElement) {
+        for (AnnotationMirror annotationMirror : currentElement.getAnnotationMirrors()) {
+            DeclaredType annotationType = annotationMirror.getAnnotationType();
+            TypeElement annotationElement = (TypeElement) annotationType.asElement();
+            if (annotationElement == null) {
+                continue;
+            }
+            String annotationName = annotationElement.getSimpleName().toString();
+            if ("Document".equalsIgnoreCase(annotationName) || "TableName".equalsIgnoreCase(annotationName)) {
+                for (Element attr : annotationElement.getEnclosedElements()) {
+                    if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
+                        String attrName = attr.getSimpleName().toString();
+                        // 获取属性值
+                        Object attrValue = getAnnotationValue(annotationMirror, attrName);
+
+                        if ("value".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            return attrValue.toString();
+                        } else if ("collection".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            return attrValue.toString();
+                        } else if ("indexName".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            return attrValue.toString();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * 动态获取注解值（不依赖具体的 Column 类）
      */
@@ -295,7 +327,8 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             if ("JsonIgnore".equalsIgnoreCase(annotationName) || "BsonIgnore".equalsIgnoreCase(annotationName)) {
                 add = false;
             }
-            if ("BsonProperty".equalsIgnoreCase(annotationName) || "JsonProperty".equalsIgnoreCase(annotationName)) {
+            if ("BsonProperty".equalsIgnoreCase(annotationName) || "JsonProperty".equalsIgnoreCase(annotationName)
+                    || "Field".equalsIgnoreCase(annotationName) || "TableField".equalsIgnoreCase(annotationName)) {
                 // 3. 提取注解的属性值（如 "name"、"length"）
                 for (Element attr : annotationElement.getEnclosedElements()) {
                     if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
@@ -303,8 +336,9 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                         // 获取属性值
                         Object attrValue = getAnnotationValue(annotationMirror, attrName);
 
-                        // 4. 设置到 ColumnMetadata 中
-                        if ("value".equals(attrName) && attrValue != null) {
+                        if ("value".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            columnMetadata.setColumnName(attrValue.toString());
+                        } else if ("name".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
                             columnMetadata.setColumnName(attrValue.toString());
                         }
                     }
@@ -314,6 +348,30 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                 columnMetadata.setPrimary(true);
                 columnMetadata.setColumnName("_id");
                 columnMetadata.setOriginColumnName("_id");
+            }
+            if ("Id".equalsIgnoreCase(annotationName)) {
+                columnMetadata.setPrimary(true);
+                if (dialect.equals(DialectEnums.MONGO)) {
+                    columnMetadata.setColumnName("_id");
+                    columnMetadata.setOriginColumnName("_id");
+                }
+            }
+            if ("TableId".equalsIgnoreCase(annotationName)) {
+                columnMetadata.setPrimary(true);
+                // 3. 提取注解的属性值（如 "name"、"length"）
+                for (Element attr : annotationElement.getEnclosedElements()) {
+                    if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
+                        String attrName = attr.getSimpleName().toString();
+                        // 获取属性值
+                        Object attrValue = getAnnotationValue(annotationMirror, attrName);
+
+                        if ("type".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            if (attrValue.toString().toLowerCase().contains("auto")) {
+                                columnMetadata.setUseGeneratedKeys(true);
+                            }
+                        }
+                    }
+                }
             }
         }
 

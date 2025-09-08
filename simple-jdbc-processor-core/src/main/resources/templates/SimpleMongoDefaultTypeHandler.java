@@ -47,10 +47,24 @@ public class {{metadata.typeHandlerClazzSimpleName}} implements Codec<{{metadata
             Column column = field.getAnnotation(Column.class);
             if (column != null) {
                 namemap.put(field.getName(), column.name());
+            }else {
+                org.springframework.data.mongodb.core.mapping.Field sField = field.getAnnotation(org.springframework.data.mongodb.core.mapping.Field.class);
+                if(sField != null) {
+                    if(!sField.name().isEmpty()) {
+                        namemap.put(field.getName(), sField.name());
+                    } else if(!sField.value().isEmpty()){
+                        namemap.put(field.getName(), sField.value());
+                    }
+                }
             }
             Id id = field.getAnnotation(Id.class);
             if (id != null) {
                 namemap.put("@Id", field.getName());
+            }else {
+                org.springframework.data.annotation.Id sId = field.getAnnotation(org.springframework.data.annotation.Id.class);
+                if(sId != null) {
+                    namemap.put("@Id", field.getName());
+                }
             }
             Transient t = field.getAnnotation(Transient.class);
             if (t != null) {
@@ -70,7 +84,10 @@ public class {{metadata.typeHandlerClazzSimpleName}} implements Codec<{{metadata
                     if (name.equals(idPropertyName)) {
                         continue;
                     }
-                    String columnName = namemap.getOrDefault(name, name);
+                    String columnName = namemap.get(name);
+                    if(columnName == null){
+                        continue;
+                    }
                     propertyModelBuilder.readName(columnName);
                     propertyModelBuilder.writeName(columnName);
                 }

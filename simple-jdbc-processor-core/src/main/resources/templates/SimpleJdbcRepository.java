@@ -298,12 +298,12 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
         getDefaultTypeHandler().encode(params, t);
-        {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(insertSql, params);
+        {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
-        {{/metadata.primaryMetadata}}
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
         getDefaultTypeHandler().afterInsert(t);
     }
 
@@ -320,8 +320,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             sql.append(appendPlaceholder(columns.size()))
                     .append(", ");
         }
-        {{#metadata.primaryMetadata}}
         List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql.substring(0, sql.length() - 2), params);
+        {{#metadata.primaryMetadata.useGeneratedKeys}}
         int index = 0;
         for (int i = 0; i < ts.size(); i++) {
             {{metadata.domainClazzName}} t = ts.get(i);
@@ -331,7 +331,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             }
             getDefaultTypeHandler().afterInsert(t);
         }
-        {{/metadata.primaryMetadata}}
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
     }
 
     public void insertSelective({{metadata.domainClazzName}} t) {
@@ -351,12 +351,12 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
 
         String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
-        {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
+        {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
-        {{/metadata.primaryMetadata}}
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
         getDefaultTypeHandler().afterInsert(t);
     }
 
@@ -380,12 +380,12 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
 
         String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
-        {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
+        {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
-        {{/metadata.primaryMetadata}}
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
         getDefaultTypeHandler().afterInsert(t);
     }
 
@@ -408,12 +408,12 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
 
         String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
-        {{#metadata.primaryMetadata}}
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
+        {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
-        {{/metadata.primaryMetadata}}
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
         getDefaultTypeHandler().afterInsert(t);
         return primaryKey;
     }
