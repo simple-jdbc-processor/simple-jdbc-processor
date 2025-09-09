@@ -83,7 +83,7 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
 
     public void setParameter(PreparedStatement ps, int paramIndex, Object param) throws SQLException {
         if (param == null) {
-            ps.setNull(paramIndex, JDBCType.NULL.getVendorTypeNumber());
+            ps.setNull(paramIndex, JDBCType.VARCHAR.getVendorTypeNumber());
             return;
         }
 
@@ -102,15 +102,35 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             return;
         }
 
-        if (param instanceof byte[]) {
-            ps.setBytes(paramIndex, (byte[]) param);
+        if (param instanceof Number) {
+            if (param instanceof Byte) {
+                byte b = (Byte) param;
+                ps.setByte(paramIndex, b);
+            } else if (param instanceof Short) {
+                short n = (Short) param;
+                ps.setShort(paramIndex, n);
+            } else if (param instanceof Integer) {
+                int n = (Integer) param;
+                ps.setInt(paramIndex, n);
+            } else if (param instanceof Long) {
+                long n = (Long) param;
+                ps.setLong(paramIndex, n);
+            } else if (param instanceof Float) {
+                float n = (Float) param;
+                ps.setFloat(paramIndex, n);
+            } else if (param instanceof Double) {
+                double n = (Double) param;
+                ps.setDouble(paramIndex, n);
+            } else if (param instanceof BigDecimal) {
+                ps.setBigDecimal(paramIndex, (BigDecimal) param);
+            } else if (param instanceof BigInteger) {
+                ps.setBigDecimal(paramIndex, new BigDecimal((BigInteger) param));
+            } else {
+                ps.setObject(paramIndex, param);
+            }
             return;
         }
 
-        if (param instanceof Enum) {
-            ps.setString(paramIndex, ((Enum<?>) param).name());
-            return;
-        }
 
         if (param instanceof java.util.Date) {
             if (param instanceof java.sql.Date) {
@@ -123,20 +143,9 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             return;
         }
 
-        if (param instanceof java.time.LocalDate) {
-            ps.setDate(paramIndex, java.sql.Date.valueOf((java.time.LocalDate) param));
-            return;
-        } else if (param instanceof java.time.LocalTime) {
-            ps.setTime(paramIndex, java.sql.Time.valueOf((java.time.LocalTime) param));
-            return;
-        } else if (param instanceof java.time.LocalDateTime) {
-            ps.setTimestamp(paramIndex, java.sql.Timestamp.valueOf((java.time.LocalDateTime) param));
-            return;
-        } else if (param instanceof java.time.ZonedDateTime) {
-            ps.setTimestamp(paramIndex, java.sql.Timestamp.from(((java.time.ZonedDateTime) param).toInstant()));
-            return;
-        } else if (param instanceof java.util.Calendar){
+        if (param instanceof java.util.Calendar){
             ps.setTimestamp(paramIndex, java.sql.Timestamp.from(((java.util.Calendar) param).toInstant()));
+            return;
         }
 
         if (param instanceof UUID) {
@@ -144,24 +153,13 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             return;
         }
 
-        if (param instanceof Number) {
-            if (param instanceof Byte) {
-                ps.setByte(paramIndex, (Byte) param);
-            } else if (param instanceof Short) {
-                ps.setShort(paramIndex, (Short) param);
-            } else if (param instanceof Integer) {
-                ps.setInt(paramIndex, (Integer) param);
-            } else if (param instanceof Long) {
-                ps.setLong(paramIndex, (Long) param);
-            } else if (param instanceof Float) {
-                ps.setFloat(paramIndex, (Float) param);
-            } else if (param instanceof Double) {
-                ps.setDouble(paramIndex, (Double) param);
-            } else if (param instanceof BigDecimal) {
-                ps.setBigDecimal(paramIndex, (BigDecimal) param);
-            } else if (param instanceof BigInteger) {
-                ps.setBigDecimal(paramIndex, new BigDecimal((BigInteger) param));
-            }
+        if (param instanceof byte[]) {
+            ps.setBytes(paramIndex, (byte[]) param);
+            return;
+        }
+
+        if (param instanceof Enum) {
+            ps.setString(paramIndex, ((Enum<?>) param).name());
             return;
         }
 
@@ -171,10 +169,11 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
 
     public {{metadata.domainClazzName}} handle(ResultSet rs, List<String> columns) throws SQLException {
         {{metadata.domainClazzName}} t = new {{metadata.domainClazzName}}();
-        for (String column : columns) {
+        for (int i = 0; i < columns.size(); i++) {
+            String column = columns.get(i);
             {{#metadata.columnMetadataList}}
             if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
-                decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", {{javaType}}.class);
+                decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", i + 1, {{javaType}}.class);
                 continue;
             }
             {{/metadata.columnMetadataList}}
@@ -182,31 +181,58 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
         return t;
     }
 
-
     public {{metadata.domainClazzName}} handle(ResultSet rs) throws SQLException {
+        int index = 1;
         {{metadata.domainClazzName}} t = new {{metadata.domainClazzName}}();
         {{#metadata.columnMetadataList}}
-        decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", {{javaType}}.class);
+        decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", index++, {{javaType}}.class);
         {{/metadata.columnMetadataList}}
         return t;
     }
 
     {{#metadata.columnMetadataList}}
-    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, Class<{{javaType}}> targetType) throws SQLException {
-        {{#isEnums}}
-        String value = resultSet.getString(column);
-        if(value == null){
-            return;
+    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, int index, Class<{{javaType}}> targetType) throws SQLException {
+        if (index > 0) {
+            {{#isEnums}}
+            String value = resultSet.getString(index);
+            if(value == null){
+                return;
+            }
+            t.set{{firstUpFieldName}}(Enum.valueOf(targetType, value));
+            {{/isEnums}}
+            {{^isEnums}}
+            {{#knowResultSetType}}
+            {{javaType}} value = resultSet.{{resultSetGetMethodName}}(index);
+            {{/knowResultSetType}}
+            {{^knowResultSetType}}
+            {{javaType}} value = resultSet.getObject(index, targetType);
+            {{/knowResultSetType}}
+            if(value == null){
+                return;
+            }
+            t.set{{firstUpFieldName}}(value);
+            {{/isEnums}}
+        } else {
+            {{#isEnums}}
+            String value = resultSet.getString(column);
+            if(value == null){
+                return;
+            }
+            t.set{{firstUpFieldName}}(Enum.valueOf(targetType, value));
+            {{/isEnums}}
+            {{^isEnums}}
+            {{#knowResultSetType}}
+            {{javaType}} value = resultSet.{{resultSetGetMethodName}}(column);
+            {{/knowResultSetType}}
+            {{^knowResultSetType}}
+            {{javaType}} value = resultSet.getObject(column, targetType);
+            {{/knowResultSetType}}
+            if(value == null){
+                return;
+            }
+            t.set{{firstUpFieldName}}(value);
+            {{/isEnums}}
         }
-        t.set{{firstUpFieldName}}(Enum.valueOf(targetType, value));
-        {{/isEnums}}
-        {{^isEnums}}
-        {{javaType}} value = resultSet.getObject(column, targetType);
-        if(value == null){
-            return;
-        }
-        t.set{{firstUpFieldName}}(value);
-        {{/isEnums}}
     }
 
     public Object encode{{firstUpFieldName}}({{javaType}} value) {

@@ -2,14 +2,10 @@ package {{metadata.packageName}};
 
 
 import javax.sql.DataSource;
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.*;
-import java.sql.Date;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
@@ -65,6 +61,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
     private String insertSql;
 
+    private String insertPlaceHolderSuffix;
 
     public {{metadata.repositoryClazzSimpleName}}(){
         this.log = org.slf4j.LoggerFactory.getLogger(this.getClass());
@@ -96,7 +93,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         this.deleteByPrimaryKeySql = deletePrefix + primaryKeyCondition;
         this.deleteByPrimaryKeysSql = deletePrefix + primaryKeyInCondition;
         this.insertSqlPrefix = "insert into " + tableName + " (" + columnsStr + ") values ";
-        this.insertSql = insertSqlPrefix + appendPlaceholder(columns.size());
+        this.insertPlaceHolderSuffix = appendPlaceholder(columns.size());;
+        this.insertSql = insertSqlPrefix + insertPlaceHolderSuffix;
     }
 
 
@@ -115,7 +113,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
     public int updateByPrimaryKey({{metadata.domainClazzName}} t) {
         getDefaultTypeHandler().preUpdate(t);
-        List<Object> params = new ArrayList<>(columns.size());
+        List<Object> params = new ArrayList<>(columns.size() + 1);
         getDefaultTypeHandler().encode(params, t);
         params.add(t.get{{metadata.primaryMetadata.firstUpFieldName}}());
         int affect = update(updateByPrimaryKeySql, params);
@@ -139,7 +137,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
     public int updateByPrimaryKeySelective({{metadata.domainClazzName}} t) {
         getDefaultTypeHandler().preUpdate(t);
-        StringBuilder prefix = new StringBuilder()
+        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
                 .append("update ")
                 .append(getTableName())
                 .append(" set ");
@@ -151,7 +149,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
         {{/metadata.columnMetadataList}}
         params.add(t.get{{metadata.primaryMetadata.firstUpFieldName}}());
-        String sql = prefix.substring(0, prefix.length() - 2) + primaryKeyCondition;
+        prefix = prefix.delete(prefix.length() - 2, prefix.length());
+        String sql = prefix.append(primaryKeyCondition).toString();
         int affect = update(sql, params);
         getDefaultTypeHandler().afterUpdate(t);
         return affect;
@@ -211,7 +210,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
     }
 
     public int updateByExampleSelective({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
-        StringBuilder prefix = new StringBuilder()
+        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
                 .append("update ")
                 .append(getTableName())
                 .append(" set ");
@@ -235,12 +234,13 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
         {{/metadata.columnMetadataList}}
         params.addAll(getConditionValues(example));
-        String sql = prefix.substring(0, prefix.length() - 2) + toConditionSql(example);
+        prefix = prefix.delete(prefix.length() - 2, prefix.length());
+        String sql = prefix.append(toConditionSql(example)).toString();
         return update(sql, params);
     }
 
     public int updateByExampleSelective({{metadata.exampleClazzName}} example) {
-        StringBuilder prefix = new StringBuilder()
+        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
                 .append("update ")
                 .append(getTableName())
                 .append(" set ");
@@ -265,7 +265,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
     public int[] updateBatchByExample(List<{{metadata.exampleClazzName}}> examples) {
         Map<String,List<Object[]>> m = new LinkedHashMap<>();
         for({{metadata.exampleClazzName}} example: examples){
-            StringBuilder prefix = new StringBuilder()
+            StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
                     .append("update ")
                     .append(getTableName())
                     .append(" set ");
@@ -307,20 +307,44 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         getDefaultTypeHandler().afterInsert(t);
     }
 
+    public void insertBatch(List<{{metadata.domainClazzName}}> ts, int batchSize) {
+        if (ts == null || ts.isEmpty()) {
+            throw new IllegalArgumentException("ts is null or empty");
+        }
+        int pages = ts.size() / batchSize;
+        for(int i = 0; i < pages; i++){
+            int start = i * batchSize;
+            int end = start + batchSize;
+            List<{{metadata.domainClazzName}}> subList = ts.subList(start, end);
+            insertBatch(subList);
+        }
+        if(ts.size() % batchSize != 0){
+            List<{{metadata.domainClazzName}}> subList = ts.subList(pages * batchSize, ts.size());
+            insertBatch(subList);
+        }
+    }
+
     public void insertBatch(List<{{metadata.domainClazzName}}> ts) {
         if (ts == null || ts.isEmpty()) {
             throw new IllegalArgumentException("ts is null or empty");
         }
+        if(ts.size() == 1){
+            insert(ts.get(0));
+            return;
+        }
         List<Object> params = new ArrayList<>(columns.size() * ts.size());
-        StringBuilder sql = new StringBuilder(insertSqlPrefix);
 
+        int initCapacity = insertSqlPrefix.length() + 32 + (ts.size() * 2) + (insertPlaceHolderSuffix.length() * ts.size());
+        StringBuilder sb = new StringBuilder(initCapacity)
+            .append(insertSqlPrefix);
         for ({{metadata.domainClazzName}} t : ts) {
+            sb.append(insertPlaceHolderSuffix);
+            sb.append(", ");
             getDefaultTypeHandler().preInsert(t);
             getDefaultTypeHandler().encode(params, t);
-            sql.append(appendPlaceholder(columns.size()))
-                    .append(", ");
         }
-        List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql.substring(0, sql.length() - 2), params);
+        String sql = sb.delete(sb.length() - 2, sb.length()).toString();
+        List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql, params);
         {{#metadata.primaryMetadata.useGeneratedKeys}}
         int index = 0;
         for (int i = 0; i < ts.size(); i++) {
@@ -349,8 +373,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
         {{/metadata.columnMetadataList}}
 
-
-        String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
+        prefix = prefix.delete(prefix.length() - 2, prefix.length());
+        String sql = prefix.append( ") values ").append(appendPlaceholder(params.size())).toString() ;
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
         {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
@@ -379,7 +403,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         {{/metadata.columnMetadataList}}
 
 
-        String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
+        String sql = prefix.delete(prefix.length() - 2, prefix.length()).append( ") values ")
+                .append(appendPlaceholder(params.size())).toString() ;
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
         {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
@@ -390,7 +415,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
     }
 
 
-    public {{metadata.primaryMetadata.javaType}} insertIgnoreSelective({{metadata.domainClazzName}} t) {
+    public void insertIgnoreSelective({{metadata.domainClazzName}} t) {
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
 
@@ -407,7 +432,8 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         {{/metadata.columnMetadataList}}
 
 
-        String sql = prefix.substring(0, prefix.length() - 2) + ") values " + appendPlaceholder(params.size());
+        String sql = prefix.delete(prefix.length() - 2, prefix.length()).append( ") values ")
+                .append(appendPlaceholder(params.size())).toString() ;
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(sql, params);
         {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
@@ -415,7 +441,6 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
         getDefaultTypeHandler().afterInsert(t);
-        return primaryKey;
     }
 
 
@@ -430,7 +455,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         Connection connection = getConnection(true);
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             getDefaultTypeHandler().setParameters(statement, params);
@@ -469,7 +494,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         Connection connection = getConnection(true);
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         boolean autoCommit;
         try {
@@ -508,7 +533,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         List<{{metadata.domainClazzName}}> ts = selectByPrimaryKeys(ids);
         if (!ts.isEmpty()) {
             Map<{{metadata.primaryMetadata.javaType}}, {{metadata.domainClazzName}}> m = ts.stream()
-                    .collect(Collectors.toMap({{metadata.domainClazzName}}::get{{metadata.primaryMetadata.firstUpFieldName}}, Function.identity()));
+                    .collect(Collectors.toMap({{metadata.domainClazzName}}::get{{metadata.primaryMetadata.firstUpFieldName}}, java.util.function.Function.identity()));
             return ids.stream()
                     .map(m::get)
                     .filter(Objects::nonNull)
@@ -521,7 +546,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         return selectByPrimaryKeys(ids)
                 .stream()
                 .filter(Objects::nonNull)
-                .collect(Collectors.toMap({{metadata.domainClazzName}}::get{{metadata.primaryMetadata.firstUpFieldName}}, Function.identity()));
+                .collect(Collectors.toMap({{metadata.domainClazzName}}::get{{metadata.primaryMetadata.firstUpFieldName}}, java.util.function.Function.identity()));
     }
 
 
@@ -530,7 +555,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         Connection connection = getConnection(true);
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             getDefaultTypeHandler().setParameters(statement, params);
@@ -560,7 +585,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             getDefaultTypeHandler().setParameters(statement, params);
@@ -584,7 +609,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             for (Object[] batchParam : batchParams) {
                 if (getLogger().isDebugEnabled()) {
                     getLogger().debug("Preparing:  {}", sql);
-                    getLogger().debug("Parameters: {}", Arrays.toString(batchParam));
+                    getLogger().debug("Parameters: {}", paramsToString(batchParam));
                 }
                 getDefaultTypeHandler().setParameters(statement, batchParam);
                 statement.addBatch();
@@ -608,7 +633,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         Connection connection = getConnection();
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             getDefaultTypeHandler().setParameters(statement, params);
@@ -629,7 +654,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         Connection connection = getConnection();
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql{{#metadata.primaryMetadata.useGeneratedKeys}}, Statement.RETURN_GENERATED_KEYS{{/metadata.primaryMetadata.useGeneratedKeys}})) {
             getDefaultTypeHandler().setParameters(statement, params);
@@ -657,12 +682,12 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         Connection connection = getConnection();
         if (getLogger().isDebugEnabled()) {
             getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", params);
+            getLogger().debug("Parameters: {}", paramsToString(params));
         }
         List<{{metadata.primaryMetadata.javaType}}> ids = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(sql{{#metadata.primaryMetadata.useGeneratedKeys}}, Statement.RETURN_GENERATED_KEYS{{/metadata.primaryMetadata.useGeneratedKeys}})) {
             getDefaultTypeHandler().setParameters(statement, params);
-            statement.executeUpdate();
+            int affect = statement.executeUpdate();
             {{#metadata.primaryMetadata.useGeneratedKeys}}
             ResultSet generatedKeys = statement.getGeneratedKeys();
             while (generatedKeys.next()) {
@@ -670,13 +695,14 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
                 ids.add(primaryKey);
             }
             {{/metadata.primaryMetadata.useGeneratedKeys}}
+
+            if (getLogger().isDebugEnabled()) {
+                getLogger().debug("Total:      {}", affect);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             closeCheckTx(connection);
-        }
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Total:      {}", ids.size());
         }
         return ids;
     }
@@ -734,7 +760,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             if (i == 0) {
                 sql.append("?");
             } else {
-                sql.append(", ?");
+                sql.append(",?");
             }
         }
         sql.append(")");
@@ -787,7 +813,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
         String orderByClause = example.getOrderByClause();
         List<Integer> limit = example.getLimit();
-        StringBuilder sql = new StringBuilder();
+        StringBuilder sql = new StringBuilder(32);
         if (orConditions != null && !orConditions.isEmpty()) {
             sql.append(" where ");
             orConditions.add(example.getCriteries());
@@ -902,7 +928,7 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
         boolean distinct = example.isDistinct();
         List<String> selectColumns = example.getColumns();
         String table = getTableName();
-        StringBuilder sql = new StringBuilder();
+        StringBuilder sql = new StringBuilder(32 + columnsStr.length());
 
         sql.append("select ");
         if (distinct) {
@@ -1029,5 +1055,35 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
 
     protected org.slf4j.Logger getLogger(){
         return log;
+    }
+
+    protected String paramsToString(Object[] params) {
+        return paramsToString(Arrays.asList(params));
+    }
+
+    protected String paramsToString(List params) {
+        if(params == null || params.isEmpty()){
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder()
+                .append("[");
+        String format = "yyyy-MM-dd HH:mm:ss.SSS";
+        java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat(format);
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern(format);
+
+        for (Object param : params) {
+            if (param instanceof java.util.Date) {
+                param = sf.format((java.util.Date) param);
+            } else if (param instanceof java.time.temporal.TemporalAccessor) {
+                param = formatter.format((java.time.temporal.TemporalAccessor) param);
+            } else if(param instanceof byte[]){
+                param = Arrays.toString((byte[]) param);
+            } else {
+                param = String.valueOf(param);
+            }
+
+            sb.append(param).append(", ");
+        }
+        return sb.substring(0, sb.length() - 2) + "]";
     }
 }

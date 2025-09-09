@@ -38,6 +38,10 @@ public class ColumnMetadata {
 
     private boolean isCollection;
 
+    private String resultSetGetMethodName;
+
+    private boolean knowResultSetType;
+
     public String getFieldName() {
         return fieldName;
     }
@@ -88,21 +92,34 @@ public class ColumnMetadata {
         this.stringType = "java.lang.String".equals(this.javaType);
         if (javaType.toLowerCase().contains("string")) {
             stringType = true;
+            this.resultSetGetMethodName = "getString";
         }
         if (javaType.equalsIgnoreCase("int") || javaType.equalsIgnoreCase("java.lang.Integer")) {
             this.javaType = "Integer";
             defaultValue = "0";
+            this.resultSetGetMethodName = "getInt";
         }
         if (javaType.equalsIgnoreCase("long") || javaType.equalsIgnoreCase("java.lang.Long")) {
             this.javaType = "Long";
             this.defaultValue = "0L";
+            this.resultSetGetMethodName = "getLong";
         }
         if (javaType.equalsIgnoreCase("short") || javaType.equalsIgnoreCase("java.lang.Short")) {
             this.javaType = "Short";
             this.defaultValue = "0";
+            this.resultSetGetMethodName = "getShort";
         }
         if (javaType.equalsIgnoreCase("boolean") || javaType.equalsIgnoreCase("java.lang.Boolean")) {
             this.javaType = "Boolean";
+            this.resultSetGetMethodName = "getBoolean";
+        }
+        if (javaType.equalsIgnoreCase("float") || javaType.equalsIgnoreCase("java.lang.Float")) {
+            this.javaType = "Float";
+            this.resultSetGetMethodName = "getFloat";
+        }
+        if (javaType.equalsIgnoreCase("double") || javaType.equalsIgnoreCase("java.lang.Double")) {
+            this.javaType = "Double";
+            this.resultSetGetMethodName = "getDouble";
         }
         if (fullJavaType.contains("java.util.List")
                 || fullJavaType.contains("java.util.ArrayList")
@@ -231,5 +248,13 @@ public class ColumnMetadata {
 
     public void setCollection(boolean collection) {
         isCollection = collection;
+    }
+
+    public boolean isKnowResultSetType() {
+        return resultSetGetMethodName != null;
+    }
+
+    public String getResultSetGetMethodName() {
+        return resultSetGetMethodName;
     }
 }
