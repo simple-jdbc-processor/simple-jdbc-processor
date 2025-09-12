@@ -101,8 +101,7 @@ public abstract class {{metadata.shardRepositoryClazzSimpleName}} {
     protected {{metadata.repositoryClazzName}} getRepository({{metadata.domainClazzName}} t) {
         String tableName = getTableName(t);
         return repositoryMap.computeIfAbsent(tableName, r -> {
-            {{metadata.repositoryClazzName}} repository = new {{metadata.repositoryClazzName}}(this.getClass(), r, getDataSource(t), getSlaveDataSourceMap(t), this.defaultTypeHandler) {
-            };
+            {{metadata.repositoryClazzName}} repository = new {{metadata.repositoryClazzName}}(this.getClass(), r, getDataSource(t), getSlaveDataSourceMap(t), this.defaultTypeHandler);
             return repository;
         });
     }

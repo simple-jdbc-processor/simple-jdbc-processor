@@ -1,15 +1,16 @@
 package {{metadata.packageName}};
 
 
+import io.github.simple.jdbc.processor.util.EntityHelper;
+
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
-public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdbcRepository}}implements io.github.simple.jdbc.processor.SimpleJdbcRepository<{{metadata.domainClazzSimpleName}}, {{metadata.primaryMetadata.javaType}}, {{metadata.exampleClazzSimpleName}}> {{/metadata.extendsSimpleJdbcRepository}}{
+public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdbcRepository}}implements io.github.simple.jdbc.processor.SimpleJdbcRepository<{{metadata.domainClazzSimpleName}}, {{metadata.primaryMetadata.javaType}}, {{metadata.exampleClazzSimpleName}}> {{/metadata.extendsSimpleJdbcRepository}}{
 
     protected final org.slf4j.Logger log;
 
@@ -474,6 +475,35 @@ public abstract class {{metadata.repositoryClazzSimpleName}} {{#metadata.extends
             getLogger().debug("Total:      {}", list.size());
         }
         return list;
+    }
+    protected <T> T selectOne(String sql, List params, Class<T> clazz) {
+        List<T> ts = selectList(sql, params, clazz);
+        return ts.isEmpty() ? null : ts.get(0);
+    }
+
+    protected <T> List<T> selectList(String sql, List params, Class<T> clazz) {
+        getDefaultTypeHandler().postSelect(sql, params);
+        List<T> list = null;
+        Connection connection = getConnection(true);
+        if (getLogger().isDebugEnabled()) {
+            getLogger().debug("Preparing:  {}", sql);
+            getLogger().debug("Parameters: {}", paramsToString(params));
+        }
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            getDefaultTypeHandler().setParameters(statement, params);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                String cacheKey = sql.length() > 1024 ? sql.substring(0,1024) : sql;
+                list = io.github.simple.jdbc.processor.util.EntityHelper.getResultList(cacheKey, resultSet, clazz);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } finally {
+            closeCheckTx(connection);
+        }
+        if (getLogger().isDebugEnabled()) {
+            getLogger().debug("Total:      {}", list.size());
+        }
+        return list == null ? null : list;
     }
 
 
