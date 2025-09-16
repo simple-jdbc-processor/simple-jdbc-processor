@@ -24,6 +24,8 @@ public enum DialectEnums {
     DERBY(POSTGRES.getValue()),
     H2(POSTGRES.getValue()),
     SQLITE(POSTGRES.getValue()),
+    REDSHIFT(POSTGRES.getValue()),
+    GREENPLUM(POSTGRES.getValue()),
     CASSANDRA(POSTGRES.getValue()),
     DORIS(POSTGRES.getValue()),
     MONGO(new DialectMetadata()

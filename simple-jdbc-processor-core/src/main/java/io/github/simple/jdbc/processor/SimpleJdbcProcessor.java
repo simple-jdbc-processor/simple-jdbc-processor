@@ -62,6 +62,8 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                     DialectMetadata dialect = example.dialect().getValue();
                     if (example.dialect() == DialectEnums.POSTGRES) {
                         tableMetadata.setPostgres(true);
+                    }else if (example.dialect() == DialectEnums.MYSQL) {
+                        tableMetadata.setMysql(true);
                     } else if (example.dialect() == DialectEnums.MSSQL) {
                         tableMetadata.setMssql(true);
                     } else if (example.dialect() == DialectEnums.ORACLE || example.dialect() == DialectEnums.DB2
@@ -70,7 +72,8 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                     } else {
                         tableMetadata.setNone(true);
                     }
-                    tableMetadata.setExtendsSimpleJdbcRepository(example.extendsSimpleJdbcRepository());
+                    tableMetadata.setExtendsSimpleJdbcRepository(true)
+                            .setAuditSql(example.auditSql());
 
                     InputStream exampleInputStream = classLoader.getResourceAsStream(dialect.getExampleJavaTemplatePath());
                     try (InputStreamReader in = new InputStreamReader(exampleInputStream, StandardCharsets.UTF_8); Writer writer = javaFileObject.openWriter()) {

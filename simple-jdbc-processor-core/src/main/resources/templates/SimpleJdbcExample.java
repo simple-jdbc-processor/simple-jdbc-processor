@@ -37,6 +37,9 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     private List<String> having = Collections.emptyList();
 
+    private Integer page;
+
+    private Integer size;
 
     public {{metadata.exampleClazzSimpleName}}() {}
 
@@ -48,7 +51,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         this.distinct = true;
         return this;
     }
-
 
     public {{metadata.exampleClazzSimpleName}} columns(List<String> columns) {
         this.columns = columns;
@@ -229,11 +231,8 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     public {{metadata.exampleClazzSimpleName}} limit(Integer size) {
         this.limit = Collections.singletonList(size);
-        return this;
-    }
-
-    public {{metadata.exampleClazzSimpleName}} limit(Integer start, Integer size) {
-        this.limit = Arrays.asList(start, size);
+        this.size = size;
+        this.page = 1;
         return this;
     }
 
@@ -242,6 +241,8 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
             throw new IllegalArgumentException("page or size for condition must greate 0");
         }
         this.limit = Arrays.asList((page - 1) * size, size);
+        this.page = page;
+        this.size = size;
         return this;
     }
 
@@ -309,6 +310,13 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this.having;
     }
 
+    public Integer getPage() {
+        return page;
+    }
+
+    public Integer getSize() {
+        return size;
+    }
 
     public static class Criteria {
 
@@ -386,5 +394,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
             this.listValue = listValue;
         }
     }
+
 
 }

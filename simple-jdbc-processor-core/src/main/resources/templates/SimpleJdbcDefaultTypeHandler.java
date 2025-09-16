@@ -22,6 +22,10 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
 
     }
 
+    public void postUpdate(String sql, Object[] params) {
+
+    }
+
     public void afterUpdate({{metadata.domainClazzName}} t) {
 
     }
@@ -245,5 +249,72 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
     }
 
     {{/metadata.columnMetadataList}}
+
+    {{#metadata.primaryMetadata}}
+    public void generatePrimaryKey({{metadata.domainClazzName}} t) {
+    }
+
+    public void batchGeneratePrimaryKey(List<{{metadata.domainClazzName}}> ts) {
+    }
+    {{/metadata.primaryMetadata}}
+
+    {{#metadata.auditSql}}
+    public String auditSql(org.slf4j.Logger log, String sql, Object[] params) {
+        return auditSql(log, sql, Arrays.asList(params));
+    }
+
+    public String auditSql(org.slf4j.Logger log, String sql, List params) {
+        if (sql == null || params == null || params.isEmpty()) {
+            return sql;
+        }
+
+        String[] parts = sql.split("\\?", params.size() + 1);
+        String format = "yyyy-MM-dd HH:mm:ss.SSS";
+        java.text.SimpleDateFormat sf = new java.text.SimpleDateFormat(format);
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern(format);
+
+        java.util.StringJoiner joiner = new java.util.StringJoiner("");
+        for (int i = 0; i < params.size(); i++) {
+            joiner.add(parts[i]);
+            Object param = params.get(i);
+            if (param instanceof java.util.Date) {
+                param = sf.format((java.util.Date) param);
+            } else if (param instanceof java.time.temporal.TemporalAccessor) {
+                param = formatter.format((java.time.temporal.TemporalAccessor) param);
+            } else if (param instanceof byte[]) {
+                param = Arrays.toString((byte[]) param);
+            } else if (param instanceof Number) {
+            } else if (param ==null){
+            } else {
+                param = String.valueOf(param);
+            }
+            if(param == null){
+                param = "null";
+            }else if (param instanceof String) {
+                param = "'" + param + "'";
+            }
+            joiner.add(param.toString());
+        }
+        joiner.add(parts[parts.length - 1]);
+
+        String auditSql = joiner.toString();
+        printAuditSql(log, auditSql);
+        return auditSql;
+    }
+
+    public void printAuditSql(org.slf4j.Logger log, String sql) {
+        log.info("Audit sql:  {}", sql);
+    }
+    {{/metadata.auditSql}}
+
+    {{^metadata.auditSql}}
+    public String auditSql(org.slf4j.Logger log, String sql, List params) {
+        return sql;
+    }
+    public String auditSql(org.slf4j.Logger log, String sql, Object[] params) {
+        return sql;
+    }
+    {{/metadata.auditSql}}
+
 }
 

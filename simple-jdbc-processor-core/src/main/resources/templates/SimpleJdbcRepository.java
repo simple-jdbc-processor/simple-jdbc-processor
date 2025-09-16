@@ -1,16 +1,15 @@
 package {{metadata.packageName}};
 
 
-import io.github.simple.jdbc.processor.util.EntityHelper;
-
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
-public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdbcRepository}}implements io.github.simple.jdbc.processor.SimpleJdbcRepository<{{metadata.domainClazzSimpleName}}, {{metadata.primaryMetadata.javaType}}, {{metadata.exampleClazzSimpleName}}> {{/metadata.extendsSimpleJdbcRepository}}{
+public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdbcRepository}}implements io.github.simple.jdbc.processor.SimpleJdbcRepository<{{metadata.domainClazzName}}, {{metadata.primaryMetadata.javaType}}, {{metadata.exampleClazzName}}> {{/metadata.extendsSimpleJdbcRepository}}{
 
     protected final org.slf4j.Logger log;
 
@@ -84,7 +83,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         this.primaryKeyCondition = " where " + primaryKeyStr + " = ?";
         this.primaryKeyInCondition = " where " + primaryKeyStr + " in ";
         this.selectByPrimaryKeySql = "select " + columnsStr + " from " + tableName + primaryKeyCondition;
-        this.selectByPrimaryKeyForUpdateSql = "select " + columnsStr + " from " + tableName + primaryKeyCondition + " for update";
+        this.selectByPrimaryKeyForUpdateSql = this.selectByPrimaryKeySql + " for update";
         this.selectByPrimaryKeysSql = "select " + columnsStr + " from " + tableName + primaryKeyInCondition;
         this.updatePrefix = "update " + tableName;
         this.updateSuffix = " set " + String.join(" = ?, ", columnsStr.split(",")) + " = ?";
@@ -158,9 +157,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public int deleteByPrimaryKey({{metadata.primaryMetadata.javaType}} {{metadata.primaryMetadata.fieldName}}) {
-        List<Object> params = new ArrayList<>();
-        params.add({{metadata.primaryMetadata.fieldName}});
-        return delete(deleteByPrimaryKeySql, params);
+        return delete(deleteByPrimaryKeySql, java.util.Collections.singletonList({{metadata.primaryMetadata.fieldName}}));
     }
 
     public int deleteByPrimaryKeys(List<{{metadata.primaryMetadata.javaType}}> {{metadata.primaryMetadata.fieldName}}s) {
@@ -183,12 +180,15 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         return selectList(sql, getConditionValues(example), rs -> getDefaultTypeHandler().handle(rs, columns));
     }
 
+    public <R> Map<R, {{metadata.domainClazzName}}> mapByExample({{metadata.exampleClazzName}} example, Function<{{metadata.domainClazzName}}, R> keyMapper) {
+        List<{{metadata.domainClazzName}}> ts = selectByExample(example);
+        return ts.stream().collect(Collectors.toMap(keyMapper, Function.identity()));
+    }
 
     public long countByExample({{metadata.exampleClazzName}} example) {
         String sql = toCountByExampleSql(example);
         return selectOne(sql, getConditionValues(example), rs -> rs.getLong(1));
     }
-
 
     public int updateByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
         List<Object> params;
@@ -296,6 +296,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public void insert({{metadata.domainClazzName}} t) {
+        getDefaultTypeHandler().generatePrimaryKey(t);
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
         getDefaultTypeHandler().encode(params, t);
@@ -333,6 +334,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             insert(ts.get(0));
             return;
         }
+        getDefaultTypeHandler().batchGeneratePrimaryKey(ts);
         List<Object> params = new ArrayList<>(columns.size() * ts.size());
 
         int initCapacity = insertSqlPrefix.length() + 32 + (ts.size() * 2) + (insertPlaceHolderSuffix.length() * ts.size());
@@ -360,6 +362,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public void insertSelective({{metadata.domainClazzName}} t) {
+        getDefaultTypeHandler().generatePrimaryKey(t);
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
 
@@ -387,6 +390,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     public void upsertSelective({{metadata.domainClazzName}} t) {
+        getDefaultTypeHandler().generatePrimaryKey(t);
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
 
@@ -417,6 +421,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     public void insertIgnoreSelective({{metadata.domainClazzName}} t) {
+        getDefaultTypeHandler().generatePrimaryKey(t);
         getDefaultTypeHandler().preInsert(t);
         List<Object> params = new ArrayList<>(columns.size());
 
@@ -451,6 +456,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected <T> List<T> selectList(String sql, List params, Handler<T> handler) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postSelect(sql, params);
         List<T> list = new ArrayList<>();
         Connection connection = getConnection(true);
@@ -476,12 +482,14 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
         return list;
     }
+
     protected <T> T selectOne(String sql, List params, Class<T> clazz) {
         List<T> ts = selectList(sql, params, clazz);
         return ts.isEmpty() ? null : ts.get(0);
     }
 
     protected <T> List<T> selectList(String sql, List params, Class<T> clazz) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postSelect(sql, params);
         List<T> list = null;
         Connection connection = getConnection(true);
@@ -519,6 +527,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     protected <T> void consume(String sql, List params, Handler<T> handler, Consumer<T> consumer) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postSelect(sql, params);
         List<T> list = new ArrayList<>();
         Connection connection = getConnection(true);
@@ -573,14 +582,19 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public Map<{{metadata.primaryMetadata.javaType}}, {{metadata.domainClazzName}}> mapById(List<{{metadata.primaryMetadata.javaType}}> ids) {
+        return mapById(ids, {{metadata.domainClazzName}}::get{{metadata.primaryMetadata.firstUpFieldName}});
+    }
+
+    public <R> Map<R, {{metadata.domainClazzName}}> mapById(List<{{metadata.primaryMetadata.javaType}}> ids, java.util.function.Function<{{metadata.domainClazzName}}, R> function) {
         return selectByPrimaryKeys(ids)
                 .stream()
                 .filter(Objects::nonNull)
-                .collect(Collectors.toMap({{metadata.domainClazzName}}::get{{metadata.primaryMetadata.firstUpFieldName}}, java.util.function.Function.identity()));
+                .collect(Collectors.toMap(function, java.util.function.Function.identity()));
     }
 
 
     protected <T> T selectOne(String sql, List params, Handler<T> handler) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postSelect(sql, params);
         Connection connection = getConnection(true);
         if (getLogger().isDebugEnabled()) {
@@ -610,6 +624,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected int update(String sql, List params) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postUpdate(sql , params);
         Connection connection = getConnection();
 
@@ -632,11 +647,12 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected int[] updateBatch(String sql, List<Object[]> batchParams) {
-        getDefaultTypeHandler().postUpdate(sql , batchParams);
         Connection connection = getConnection();
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             for (Object[] batchParam : batchParams) {
+                getDefaultTypeHandler().auditSql(log, sql, batchParam);
+                getDefaultTypeHandler().postUpdate(sql , batchParam);
                 if (getLogger().isDebugEnabled()) {
                     getLogger().debug("Preparing:  {}", sql);
                     getLogger().debug("Parameters: {}", paramsToString(batchParam));
@@ -659,6 +675,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected int delete(String sql, List params) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postDelete(sql , params);
         Connection connection = getConnection();
         if (getLogger().isDebugEnabled()) {
@@ -680,6 +697,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected {{metadata.primaryMetadata.javaType}} insert(String sql, List params) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postInsert(sql , params);
         Connection connection = getConnection();
         if (getLogger().isDebugEnabled()) {
@@ -708,6 +726,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     protected List<{{metadata.primaryMetadata.javaType}}> insertBatch(String sql, List<Object> params) {
+        getDefaultTypeHandler().auditSql(log, sql, params);
         getDefaultTypeHandler().postInsert(sql , params);
         Connection connection = getConnection();
         if (getLogger().isDebugEnabled()) {
@@ -930,6 +949,11 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                 sql.append(" , ");
                 sql.append(limit.get(1));
                 {{/metadata.none}}
+                {{#metadata.mysql}}
+                sql.append(limit.get(0));
+                sql.append(" , ");
+                sql.append(limit.get(1));
+                {{/metadata.mysql}}
                 {{#metadata.postgres}}
                 sql.append(limit.get(0));
                 sql.append(" offset ");
@@ -1115,5 +1139,18 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             sb.append(param).append(", ");
         }
         return sb.substring(0, sb.length() - 2) + "]";
+    }
+
+    public io.github.simple.jdbc.processor.PageInfo<{{metadata.domainClazzName}}> pageByExample({{metadata.exampleClazzName}} q) {
+        Integer page = q.getPage();
+        Integer size = q.getSize();
+        List<{{metadata.domainClazzName}}> ts = selectByExample(q);
+        long total = ts.size();
+        if (page == 1 && total < size) {
+            total = ts.size();
+        } else {
+            total = countByExample(q);
+        }
+        return new io.github.simple.jdbc.processor.PageInfo<>(page, size, total, ts);
     }
 }

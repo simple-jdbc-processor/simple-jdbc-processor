@@ -44,13 +44,6 @@ public @interface SimpleJdbc {
     boolean shardTable() default false;
 
     /**
-     * 是否继承 SimpleJdbcRepository 接口
-     *
-     * @return 是否继承 SimpleJdbcRepository 接口
-     */
-    boolean extendsSimpleJdbcRepository() default true;
-
-    /**
      * 在没有@Column注解的情况下是否使用下划线,只针对jdbc数据库有效,MongoDB,ES等NoSQL数据库无效
      *
      * @return 是否在没有@Column注解的情况下是否使用下划线
@@ -64,5 +57,11 @@ public @interface SimpleJdbc {
      */
     boolean escape() default false;
 
+    /**
+     * 是否审计sql
+     *
+     * @return 是否审计sql
+     */
+    boolean auditSql() default false;
 
 }

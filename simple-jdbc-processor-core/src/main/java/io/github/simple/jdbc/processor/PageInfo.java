@@ -35,40 +35,53 @@ public class PageInfo<T> implements Serializable {
         return page;
     }
 
-    public void setPage(int page) {
+    public PageInfo<T> setPage(int page) {
         this.page = page;
+        return this;
     }
 
     public int getSize() {
         return size;
     }
 
-    public void setSize(int size) {
+    public PageInfo<T> setSize(int size) {
         this.size = size;
+        return this;
     }
 
     public long getTotal() {
         return total;
     }
 
-    public void setTotal(long total) {
+    public PageInfo<T> setTotal(long total) {
         this.total = total;
+        return this;
     }
 
     public int getPages() {
         return pages;
     }
 
-    public void setPages(int pages) {
+    public PageInfo<T> setPages(int pages) {
         this.pages = pages;
+        return this;
     }
 
     public List<T> getData() {
         return data;
     }
 
-    public void setData(List<T> data) {
+    public PageInfo<T> setData(List<T> data) {
         this.data = data;
+        return this;
+    }
+
+    public boolean hasPrevious() {
+        return this.page > 1L;
+    }
+
+    public boolean hasNext() {
+        return this.page < this.getPages();
     }
 
     @Override

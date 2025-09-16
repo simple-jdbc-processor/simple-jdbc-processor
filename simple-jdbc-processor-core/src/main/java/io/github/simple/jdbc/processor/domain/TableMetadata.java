@@ -54,12 +54,15 @@ public class TableMetadata {
 
     private boolean shard;
 
+    private boolean auditSql;
+
     private boolean mysql;
     private boolean oracle;
     private boolean postgres;
     private boolean mssql;
     private boolean none;
     private boolean extendsSimpleJdbcRepository;
+
 
     public String getTableName() {
         return tableName;
@@ -346,6 +349,15 @@ public class TableMetadata {
 
     public TableMetadata setExtendsSimpleJdbcRepository(boolean extendsSimpleJdbcRepository) {
         this.extendsSimpleJdbcRepository = extendsSimpleJdbcRepository;
+        return this;
+    }
+
+    public boolean isAuditSql() {
+        return auditSql;
+    }
+
+    public TableMetadata setAuditSql(boolean auditSql) {
+        this.auditSql = auditSql;
         return this;
     }
 }
