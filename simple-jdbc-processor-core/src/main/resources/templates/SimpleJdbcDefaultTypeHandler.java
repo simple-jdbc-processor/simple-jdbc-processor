@@ -177,7 +177,7 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             String column = columns.get(i);
             {{#metadata.columnMetadataList}}
             if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
-                decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", i + 1, {{javaType}}.class);
+                decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", i + 1, {{sqlJavaType}}.class);
                 continue;
             }
             {{/metadata.columnMetadataList}}
@@ -189,13 +189,13 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
         int index = 1;
         {{metadata.domainClazzName}} t = new {{metadata.domainClazzName}}();
         {{#metadata.columnMetadataList}}
-        decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", index++, {{javaType}}.class);
+        decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", index++, {{sqlJavaType}}.class);
         {{/metadata.columnMetadataList}}
         return t;
     }
 
     {{#metadata.columnMetadataList}}
-    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, int index, Class<{{javaType}}> targetType) throws SQLException {
+    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, int index, Class<{{sqlJavaType}}> targetType) throws SQLException {
         if (index > 0) {
             {{#isEnums}}
             String value = resultSet.getString(index);

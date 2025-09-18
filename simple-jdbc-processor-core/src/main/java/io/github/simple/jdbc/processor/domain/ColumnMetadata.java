@@ -36,6 +36,8 @@ public class ColumnMetadata {
 
     private String fullJavaType;
 
+    private String sqlJavaType;
+
     private boolean isCollection;
 
     private String resultSetGetMethodName;
@@ -129,6 +131,10 @@ public class ColumnMetadata {
                 || fullJavaType.contains("java.util.Map")
                 || fullJavaType.contains("java.util.HashMap")) {
             setCollection(true);
+        }
+        setSqlJavaType(fullJavaType);
+        if(fullJavaType.equalsIgnoreCase("java.util.Date")) {
+            setSqlJavaType("java.sql.Date");
         }
         return this;
     }
@@ -256,5 +262,13 @@ public class ColumnMetadata {
 
     public String getResultSetGetMethodName() {
         return resultSetGetMethodName;
+    }
+
+    public String getSqlJavaType() {
+        return sqlJavaType;
+    }
+
+    public void setSqlJavaType(String sqlJavaType) {
+        this.sqlJavaType = sqlJavaType;
     }
 }
