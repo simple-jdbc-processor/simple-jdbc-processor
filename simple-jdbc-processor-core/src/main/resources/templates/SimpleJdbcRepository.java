@@ -11,6 +11,14 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unchecked")
 public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdbcRepository}}implements io.github.simple.jdbc.processor.SimpleJdbcRepository<{{metadata.domainClazzName}}, {{metadata.primaryMetadata.javaType}}, {{metadata.exampleClazzName}}> {{/metadata.extendsSimpleJdbcRepository}}{
 
+    private final String tableName;
+
+    private final String columnsStr = "{{metadata.columns}}";
+
+    private final String primaryKeyStr = "{{metadata.primaryMetadata.columnName}}";
+
+    private final List<String> columns = Arrays.asList(columnsStr.split(", "));
+
     protected final org.slf4j.Logger log;
 
     private final java.util.concurrent.atomic.AtomicLong counter = new java.util.concurrent.atomic.AtomicLong();
@@ -23,63 +31,41 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
     private {{metadata.typeHandlerClazzName}} defaultTypeHandler = new {{metadata.typeHandlerClazzName}}();
 
-    private String tableName = "{{metadata.tableName}}";
+    private final Class<{{metadata.primaryMetadata.javaType}}> primaryKeyType = {{metadata.primaryMetadata.javaType}}.class;
 
-    private String columnsStr = "{{metadata.columns}}";
+    private final String primaryKeyCondition;
 
-    private List<String> columns = Arrays.asList(columnsStr.split(", "));
+    private final String primaryKeyInCondition;
 
-    private String primaryKeyStr = "{{metadata.primaryMetadata.columnName}}";
+    private final String selectByPrimaryKeySql;
 
-    private Class<{{metadata.primaryMetadata.javaType}}> primaryKeyType = {{metadata.primaryMetadata.javaType}}.class;
+    private final String selectByPrimaryKeyForUpdateSql;
 
-    private String primaryKeyCondition;
+    private final String selectByPrimaryKeysSql;
 
-    private String primaryKeyInCondition;
+    private final String updatePrefix;
 
-    private String selectByPrimaryKeySql;
+    private final String updateSuffix;
 
-    private String selectByPrimaryKeyForUpdateSql;
+    private final String updateByExamplePrefix;
 
-    private String selectByPrimaryKeysSql;
+    private final String updateByPrimaryKeySql;
 
-    private String updatePrefix;
+    private final String deletePrefix;
 
-    private String updateSuffix;
+    private final String deleteByPrimaryKeySql;
 
-    private String updateByExamplePrefix;
+    private final String deleteByPrimaryKeysSql;
 
-    private String updateByPrimaryKeySql;
+    private final String insertSqlPrefix;
 
-    private String deletePrefix;
+    private final String insertSql;
 
-    private String deleteByPrimaryKeySql;
+    private final String insertPlaceHolderSuffix;
 
-    private String deleteByPrimaryKeysSql;
-
-    private String insertSqlPrefix;
-
-    private String insertSql;
-
-    private String insertPlaceHolderSuffix;
-
-    public {{metadata.repositoryClazzSimpleName}}(){
+    public {{metadata.repositoryClazzSimpleName}}() {
+        this.tableName = "{{metadata.tableName}}";
         this.log = org.slf4j.LoggerFactory.getLogger(this.getClass());
-        init();
-    }
-{{#metadata.shard}}
-    public {{metadata.repositoryClazzSimpleName}}(Class<?> logClazz, String tableName, DataSource dataSource, Map<String, DataSource> dataSourceMap, {{metadata.typeHandlerClazzName}} defaultTypeHandler){
-        this.log = org.slf4j.LoggerFactory.getLogger(logClazz);
-        this.tableName = tableName;
-        this.dataSource = dataSource;
-        this.defaultTypeHandler = defaultTypeHandler;
-        this.dataSourceMap = dataSourceMap;
-        this.slaveDataSources = new ArrayList<>(dataSourceMap.keySet());
-        init();
-    }
-{{/metadata.shard}}
-
-    private void init() {
         this.primaryKeyCondition = " where " + primaryKeyStr + " = ?";
         this.primaryKeyInCondition = " where " + primaryKeyStr + " in ";
         this.selectByPrimaryKeySql = "select " + columnsStr + " from " + tableName + primaryKeyCondition;
@@ -97,27 +83,52 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         this.insertSql = insertSqlPrefix + insertPlaceHolderSuffix;
     }
 
+{{#metadata.shard}}
+    public {{metadata.repositoryClazzSimpleName}}(Class<?> logClazz, String tableName, DataSource masterDataSource, Map<String, DataSource> slaveDataSourceMap, {{metadata.typeHandlerClazzName}} defaultTypeHandler){
+        this.log = org.slf4j.LoggerFactory.getLogger(logClazz);
+        this.tableName = tableName;
+        this.dataSource = masterDataSource;
+        this.defaultTypeHandler = defaultTypeHandler;
+        this.dataSourceMap = slaveDataSourceMap;
+        this.slaveDataSources = new ArrayList<>(slaveDataSourceMap.keySet());
+        this.primaryKeyCondition = " where " + primaryKeyStr + " = ?";
+        this.primaryKeyInCondition = " where " + primaryKeyStr + " in ";
+        this.selectByPrimaryKeySql = "select " + columnsStr + " from " + tableName + primaryKeyCondition;
+        this.selectByPrimaryKeyForUpdateSql = this.selectByPrimaryKeySql + " for update";
+        this.selectByPrimaryKeysSql = "select " + columnsStr + " from " + tableName + primaryKeyInCondition;
+        this.updatePrefix = "update " + tableName;
+        this.updateSuffix = " set " + String.join(" = ?, ", columnsStr.split(",")) + " = ?";
+        this.updateByExamplePrefix = updatePrefix + updateSuffix;
+        this.updateByPrimaryKeySql = updatePrefix + updateSuffix + primaryKeyCondition;
+        this.deletePrefix = "delete from " + tableName;
+        this.deleteByPrimaryKeySql = deletePrefix + primaryKeyCondition;
+        this.deleteByPrimaryKeysSql = deletePrefix + primaryKeyInCondition;
+        this.insertSqlPrefix = "insert into " + tableName + " (" + columnsStr + ") values ";
+        this.insertPlaceHolderSuffix = appendPlaceholder(columns.size());;
+        this.insertSql = insertSqlPrefix + insertPlaceHolderSuffix;
+    }
+{{/metadata.shard}}
 
     public {{metadata.domainClazzName}} selectByPrimaryKey({{metadata.primaryMetadata.javaType}} {{metadata.primaryMetadata.fieldName}}) {
-        return selectOne(selectByPrimaryKeySql, Collections.singletonList({{metadata.primaryMetadata.fieldName}}), r-> getDefaultTypeHandler().handle(r));
+        return selectOne(selectByPrimaryKeySql, Collections.singletonList({{metadata.primaryMetadata.fieldName}}), r-> defaultTypeHandler.handle(r));
     }
 
     public {{metadata.domainClazzName}} selectByPrimaryKeyForUpdate({{metadata.primaryMetadata.javaType}} {{metadata.primaryMetadata.fieldName}}) {
-        return selectOne(selectByPrimaryKeyForUpdateSql, Collections.singletonList({{metadata.primaryMetadata.fieldName}}), r-> getDefaultTypeHandler().handle(r));
+        return selectOne(selectByPrimaryKeyForUpdateSql, Collections.singletonList({{metadata.primaryMetadata.fieldName}}), r-> defaultTypeHandler.handle(r));
     }
 
     public List<{{metadata.domainClazzName}}> selectByPrimaryKeys(List<{{metadata.primaryMetadata.javaType}}> {{metadata.primaryMetadata.fieldName}}s) {
         String sql = selectByPrimaryKeysSql + appendPlaceholder({{metadata.primaryMetadata.fieldName}}s.size());
-        return selectList(sql, {{metadata.primaryMetadata.fieldName}}s, r-> getDefaultTypeHandler().handle(r));
+        return selectList(sql, {{metadata.primaryMetadata.fieldName}}s, r-> defaultTypeHandler.handle(r));
     }
 
     public int updateByPrimaryKey({{metadata.domainClazzName}} t) {
-        getDefaultTypeHandler().preUpdate(t);
-        List<Object> params = new ArrayList<>(columns.size() + 1);
-        getDefaultTypeHandler().encode(params, t);
+        defaultTypeHandler.preUpdate(t);
+        ArrayList<Object> params = new ArrayList<>(columns.size() + 1);
+        defaultTypeHandler.encode(params, t);
         params.add(t.get{{metadata.primaryMetadata.firstUpFieldName}}());
         int affect = update(updateByPrimaryKeySql, params);
-        getDefaultTypeHandler().afterUpdate(t);
+        defaultTypeHandler.afterUpdate(t);
         return affect;
     }
 
@@ -136,13 +147,13 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     public int updateByPrimaryKeySelective({{metadata.domainClazzName}} t) {
-        getDefaultTypeHandler().preUpdate(t);
+        defaultTypeHandler.preUpdate(t);
         StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
                 .append("update ")
-                .append(getTableName())
+                .append(tableName)
                 .append(" set ");
-        List<Object> params = new ArrayList<>(columns.size());
-        getDefaultTypeHandler().encodeSelective(params, t);
+        ArrayList<Object> params = new ArrayList<>(columns.size() + 1);
+        defaultTypeHandler.encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}} = ?, ");
@@ -152,7 +163,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         prefix = prefix.delete(prefix.length() - 2, prefix.length());
         String sql = prefix.append(primaryKeyCondition).toString();
         int affect = update(sql, params);
-        getDefaultTypeHandler().afterUpdate(t);
+        defaultTypeHandler.afterUpdate(t);
         return affect;
     }
 
@@ -175,9 +186,9 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         String sql = toSelectByExampleSql(example);
         List<String> columns = example.getColumns();
         if (columns == null || columns.isEmpty()) {
-            return selectList(sql, getConditionValues(example), r-> getDefaultTypeHandler().handle(r));
+            return selectList(sql, getConditionValues(example), r-> defaultTypeHandler.handle(r));
         }
-        return selectList(sql, getConditionValues(example), rs -> getDefaultTypeHandler().handle(rs, columns));
+        return selectList(sql, getConditionValues(example), rs -> defaultTypeHandler.handle(rs, columns));
     }
 
     public <R> Map<R, {{metadata.domainClazzName}}> mapByExample({{metadata.exampleClazzName}} example, Function<{{metadata.domainClazzName}}, R> keyMapper) {
@@ -191,14 +202,14 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public int updateByExample({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
-        List<Object> params;
+        ArrayList<Object> params;
         if (example.getUpdateSetValues() != null) {
             params = new ArrayList<>(example.getUpdateSetValues());
         } else {
             params = new ArrayList<>(columns.size());
         }
 
-        getDefaultTypeHandler().encode(params, t);
+        defaultTypeHandler.encode(params, t);
         String condition = toConditionSql(example);
         String sql;
         if (example.getUpdateExpression() != null) {
@@ -211,12 +222,12 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public int updateByExampleSelective({{metadata.domainClazzName}} t, {{metadata.exampleClazzName}} example) {
-        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
+        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length() + 32)
                 .append("update ")
-                .append(getTableName())
+                .append(tableName)
                 .append(" set ");
 
-        List<Object> params;
+        ArrayList<Object> params;
         if (example.getUpdateSetValues() != null) {
             params = new ArrayList<>(example.getUpdateSetValues());
         } else {
@@ -227,7 +238,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             prefix.append(String.join(", ", example.getUpdateExpression()));
         }
 
-        getDefaultTypeHandler().encodeSelective(params, t);
+        defaultTypeHandler.encodeSelective(params, t);
 
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
@@ -241,12 +252,12 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public int updateByExampleSelective({{metadata.exampleClazzName}} example) {
-        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
+        StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length() + 32)
                 .append("update ")
-                .append(getTableName())
+                .append(tableName)
                 .append(" set ");
 
-        List<Object> params;
+        ArrayList<Object> params;
         if (example.getUpdateSetValues() != null) {
             params = new ArrayList<>(example.getUpdateSetValues());
         } else {
@@ -264,13 +275,13 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     public int[] updateBatchByExample(List<{{metadata.exampleClazzName}}> examples) {
-        Map<String,List<Object[]>> m = new LinkedHashMap<>();
+        LinkedHashMap<String,List<Object[]>> m = new LinkedHashMap<>();
         for({{metadata.exampleClazzName}} example: examples){
-            StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length())
+            StringBuilder prefix = new StringBuilder(updateByPrimaryKeySql.length() + 32)
                     .append("update ")
-                    .append(getTableName())
+                    .append(tableName)
                     .append(" set ");
-            List<Object> params;
+            ArrayList<Object> params;
             if (example.getUpdateSetValues() != null) {
                 params = new ArrayList<>(example.getUpdateSetValues());
             } else {
@@ -296,17 +307,17 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     public void insert({{metadata.domainClazzName}} t) {
-        getDefaultTypeHandler().generatePrimaryKey(t);
-        getDefaultTypeHandler().preInsert(t);
-        List<Object> params = new ArrayList<>(columns.size());
-        getDefaultTypeHandler().encode(params, t);
+        defaultTypeHandler.generatePrimaryKey(t);
+        defaultTypeHandler.preInsert(t);
+        ArrayList<Object> params = new ArrayList<>(columns.size());
+        defaultTypeHandler.encode(params, t);
         {{metadata.primaryMetadata.javaType}} primaryKey = insert(insertSql, params);
         {{#metadata.primaryMetadata.useGeneratedKeys}}
         if (t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null && primaryKey > 0) {
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
-        getDefaultTypeHandler().afterInsert(t);
+        defaultTypeHandler.afterInsert(t);
     }
 
     public void insertBatch(List<{{metadata.domainClazzName}}> ts, int batchSize) {
@@ -314,13 +325,13 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             throw new IllegalArgumentException("ts is null or empty");
         }
         int pages = ts.size() / batchSize;
-        for(int i = 0; i < pages; i++){
+        for (int i = 0; i < pages; i++) {
             int start = i * batchSize;
             int end = start + batchSize;
             List<{{metadata.domainClazzName}}> subList = ts.subList(start, end);
             insertBatch(subList);
         }
-        if(ts.size() % batchSize != 0){
+        if (ts.size() % batchSize != 0) {
             List<{{metadata.domainClazzName}}> subList = ts.subList(pages * batchSize, ts.size());
             insertBatch(subList);
         }
@@ -330,12 +341,12 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         if (ts == null || ts.isEmpty()) {
             throw new IllegalArgumentException("ts is null or empty");
         }
-        if(ts.size() == 1){
-            insert(ts.get(0));
+        if (ts.size() == 1) {
+            insertSelective(ts.get(0));
             return;
         }
-        getDefaultTypeHandler().batchGeneratePrimaryKey(ts);
-        List<Object> params = new ArrayList<>(columns.size() * ts.size());
+        defaultTypeHandler.batchGeneratePrimaryKey(ts);
+        ArrayList<Object> params = new ArrayList<>(columns.size() * ts.size());
 
         int initCapacity = insertSqlPrefix.length() + 32 + (ts.size() * 2) + (insertPlaceHolderSuffix.length() * ts.size());
         StringBuilder sb = new StringBuilder(initCapacity)
@@ -343,11 +354,13 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         for ({{metadata.domainClazzName}} t : ts) {
             sb.append(insertPlaceHolderSuffix);
             sb.append(", ");
-            getDefaultTypeHandler().preInsert(t);
-            getDefaultTypeHandler().encode(params, t);
+            defaultTypeHandler.preInsert(t);
+            defaultTypeHandler.encode(params, t);
         }
         String sql = sb.delete(sb.length() - 2, sb.length()).toString();
+        sb = null;
         List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql, params);
+        params = null;
         {{#metadata.primaryMetadata.useGeneratedKeys}}
         int index = 0;
         for (int i = 0; i < ts.size(); i++) {
@@ -356,21 +369,27 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                 ts.get(index).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKeys.get(index));
                 index++;
             }
-            getDefaultTypeHandler().afterInsert(t);
+            defaultTypeHandler.afterInsert(t);
+        }
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
+        {{^metadata.primaryMetadata.useGeneratedKeys}}
+        for (int i = 0; i < ts.size(); i++) {
+            {{metadata.domainClazzName}} t = ts.get(i);
+            defaultTypeHandler.afterInsert(t);
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
     }
 
     public void insertSelective({{metadata.domainClazzName}} t) {
-        getDefaultTypeHandler().generatePrimaryKey(t);
-        getDefaultTypeHandler().preInsert(t);
-        List<Object> params = new ArrayList<>(columns.size());
+        defaultTypeHandler.generatePrimaryKey(t);
+        defaultTypeHandler.preInsert(t);
+        ArrayList<Object> params = new ArrayList<>(columns.size());
 
         StringBuilder prefix = new StringBuilder()
                 .append("insert into ")
-                .append(getTableName())
+                .append(tableName)
                 .append(" (");
-        getDefaultTypeHandler().encodeSelective(params, t);
+        defaultTypeHandler.encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}}, ");
@@ -385,21 +404,21 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
-        getDefaultTypeHandler().afterInsert(t);
+        defaultTypeHandler.afterInsert(t);
     }
 
 
     public void upsertSelective({{metadata.domainClazzName}} t) {
-        getDefaultTypeHandler().generatePrimaryKey(t);
-        getDefaultTypeHandler().preInsert(t);
-        List<Object> params = new ArrayList<>(columns.size());
+        defaultTypeHandler.generatePrimaryKey(t);
+        defaultTypeHandler.preInsert(t);
+        ArrayList<Object> params = new ArrayList<>(columns.size());
 
         StringBuilder prefix = new StringBuilder()
                 .append("replace into ")
-                .append(getTableName())
+                .append(tableName)
                 .append(" (");
 
-        getDefaultTypeHandler().encodeSelective(params, t);
+        defaultTypeHandler.encodeSelective(params, t);
 
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
@@ -416,21 +435,21 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
-        getDefaultTypeHandler().afterInsert(t);
+        defaultTypeHandler.afterInsert(t);
     }
 
 
     public void insertIgnoreSelective({{metadata.domainClazzName}} t) {
-        getDefaultTypeHandler().generatePrimaryKey(t);
-        getDefaultTypeHandler().preInsert(t);
-        List<Object> params = new ArrayList<>(columns.size());
+        defaultTypeHandler.generatePrimaryKey(t);
+        defaultTypeHandler.preInsert(t);
+        ArrayList<Object> params = new ArrayList<>(columns.size());
 
         StringBuilder prefix = new StringBuilder()
                 .append("insert ignore into ")
-                .append(getTableName())
+                .append(tableName)
                 .append(" (");
 
-        getDefaultTypeHandler().encodeSelective(params, t);
+        defaultTypeHandler.encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
         if (t.get{{firstUpFieldName}}() != null) {
             prefix.append("{{columnName}}, ");
@@ -446,7 +465,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             t.set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKey);
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
-        getDefaultTypeHandler().afterInsert(t);
+        defaultTypeHandler.afterInsert(t);
     }
 
 
@@ -456,16 +475,16 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected <T> List<T> selectList(String sql, List params, Handler<T> handler) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postSelect(sql, params);
-        List<T> list = new ArrayList<>();
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postSelect(sql, params);
+        ArrayList<T> list = new ArrayList<>();
         Connection connection = getConnection(true);
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     T result = handler.handle(resultSet);
@@ -477,8 +496,8 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         } finally {
             closeCheckTx(connection);
         }
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Total:      {}", list.size());
+        if (log.isDebugEnabled()) {
+            log.debug("Total:      {}", list.size());
         }
         return list;
     }
@@ -489,16 +508,16 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected <T> List<T> selectList(String sql, List params, Class<T> clazz) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postSelect(sql, params);
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postSelect(sql, params);
         List<T> list = null;
         Connection connection = getConnection(true);
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             try (ResultSet resultSet = statement.executeQuery()) {
                 String cacheKey = sql.length() > 1024 ? sql.substring(0,1024) : sql;
                 list = io.github.simple.jdbc.processor.util.EntityHelper.getResultList(cacheKey, resultSet, clazz);
@@ -508,10 +527,10 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         } finally {
             closeCheckTx(connection);
         }
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Total:      {}", list.size());
+        if (log.isDebugEnabled()) {
+            log.debug("Total:      {}", list.size());
         }
-        return list == null ? null : list;
+        return list == null ? new ArrayList<>() : list;
     }
 
 
@@ -519,21 +538,21 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         String sql = toSelectByExampleSql(example);
         List<String> columns = example.getColumns();
         if (columns == null || columns.isEmpty()) {
-            consume(sql, getConditionValues(example), r-> getDefaultTypeHandler().handle(r),consume);
+            consume(sql, getConditionValues(example), r-> defaultTypeHandler.handle(r),consume);
             return;
         }
-        consume(sql, getConditionValues(example), rs -> getDefaultTypeHandler().handle(rs, columns),consume);
+        consume(sql, getConditionValues(example), rs -> defaultTypeHandler.handle(rs, columns), consume);
     }
 
 
     protected <T> void consume(String sql, List params, Handler<T> handler, Consumer<T> consumer) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postSelect(sql, params);
-        List<T> list = new ArrayList<>();
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postSelect(sql, params);
+        ArrayList<T> list = new ArrayList<>();
         Connection connection = getConnection(true);
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         boolean autoCommit;
         try {
@@ -547,7 +566,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         long total = 0;
         try (PreparedStatement statement = connection.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)) {
             statement.setFetchSize(Integer.MIN_VALUE);
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     T handle = handler.handle(resultSet);
@@ -562,8 +581,8 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                 close(connection);
             }
         }
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Total:      {}", total);
+        if (log.isDebugEnabled()) {
+            log.debug("Total:      {}", total);
         }
     }
 
@@ -594,24 +613,24 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     protected <T> T selectOne(String sql, List params, Handler<T> handler) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postSelect(sql, params);
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postSelect(sql, params);
         Connection connection = getConnection(true);
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    if (getLogger().isDebugEnabled()) {
-                        getLogger().debug("Total:      {}", 1);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Total:      {}", 1);
                     }
                     return handler.handle(resultSet);
                 } else {
-                    if (getLogger().isDebugEnabled()) {
-                        getLogger().debug("Total:      {}", 0);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Total:      {}", 0);
                     }
                 }
             }
@@ -624,19 +643,19 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected int update(String sql, List params) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postUpdate(sql , params);
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postUpdate(sql , params);
         Connection connection = getConnection();
 
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             int affect = statement.executeUpdate();
-            if (getLogger().isDebugEnabled()) {
-                getLogger().debug("Total:      {}", affect);
+            if (log.isDebugEnabled()) {
+                log.debug("Total:      {}", affect);
             }
             return affect;
         } catch (Exception e) {
@@ -651,19 +670,19 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             for (Object[] batchParam : batchParams) {
-                getDefaultTypeHandler().auditSql(log, sql, batchParam);
-                getDefaultTypeHandler().postUpdate(sql , batchParam);
-                if (getLogger().isDebugEnabled()) {
-                    getLogger().debug("Preparing:  {}", sql);
-                    getLogger().debug("Parameters: {}", paramsToString(batchParam));
+                defaultTypeHandler.auditSql(log, sql, batchParam);
+                defaultTypeHandler.postUpdate(sql , batchParam);
+                if (log.isDebugEnabled()) {
+                    log.debug("Preparing:  {}", sql);
+                    log.debug("Parameters: {}", paramsToString(batchParam));
                 }
-                getDefaultTypeHandler().setParameters(statement, batchParam);
+                defaultTypeHandler.setParameters(statement, batchParam);
                 statement.addBatch();
             }
             int[] affects = statement.executeBatch();
-            if (getLogger().isDebugEnabled()) {
+            if (log.isDebugEnabled()) {
                 for (int affect : affects) {
-                    getLogger().debug("Total:      {}", affect);
+                    log.debug("Total:      {}", affect);
                 }
             }
             return affects;
@@ -675,18 +694,18 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected int delete(String sql, List params) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postDelete(sql , params);
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postDelete(sql , params);
         Connection connection = getConnection();
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             int affect = statement.executeUpdate();
-            if (getLogger().isDebugEnabled()) {
-                getLogger().debug("Total:      {}", affect);
+            if (log.isDebugEnabled()) {
+                log.debug("Total:      {}", affect);
             }
             return affect;
         } catch (Exception e) {
@@ -697,15 +716,15 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected {{metadata.primaryMetadata.javaType}} insert(String sql, List params) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postInsert(sql , params);
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postInsert(sql , params);
         Connection connection = getConnection();
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         try (PreparedStatement statement = connection.prepareStatement(sql{{#metadata.primaryMetadata.useGeneratedKeys}}, Statement.RETURN_GENERATED_KEYS{{/metadata.primaryMetadata.useGeneratedKeys}})) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             int affect = statement.executeUpdate();
             {{#metadata.primaryMetadata.useGeneratedKeys}}
             ResultSet generatedKeys = statement.getGeneratedKeys();
@@ -713,8 +732,8 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                 return generatedKeys.getObject(1, {{metadata.primaryMetadata.javaType}}.class);
             }
             {{/metadata.primaryMetadata.useGeneratedKeys}}
-            if (getLogger().isDebugEnabled()) {
-                getLogger().debug("Total:      {}", affect);
+            if (log.isDebugEnabled()) {
+                log.debug("Total:      {}", affect);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -726,16 +745,16 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     protected List<{{metadata.primaryMetadata.javaType}}> insertBatch(String sql, List<Object> params) {
-        getDefaultTypeHandler().auditSql(log, sql, params);
-        getDefaultTypeHandler().postInsert(sql , params);
+        defaultTypeHandler.auditSql(log, sql, params);
+        defaultTypeHandler.postInsert(sql , params);
         Connection connection = getConnection();
-        if (getLogger().isDebugEnabled()) {
-            getLogger().debug("Preparing:  {}", sql);
-            getLogger().debug("Parameters: {}", paramsToString(params));
+        if (log.isDebugEnabled()) {
+            log.debug("Preparing:  {}", sql);
+            log.debug("Parameters: {}", paramsToString(params));
         }
         List<{{metadata.primaryMetadata.javaType}}> ids = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(sql{{#metadata.primaryMetadata.useGeneratedKeys}}, Statement.RETURN_GENERATED_KEYS{{/metadata.primaryMetadata.useGeneratedKeys}})) {
-            getDefaultTypeHandler().setParameters(statement, params);
+            defaultTypeHandler.setParameters(statement, params);
             int affect = statement.executeUpdate();
             {{#metadata.primaryMetadata.useGeneratedKeys}}
             ResultSet generatedKeys = statement.getGeneratedKeys();
@@ -745,8 +764,8 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             }
             {{/metadata.primaryMetadata.useGeneratedKeys}}
 
-            if (getLogger().isDebugEnabled()) {
-                getLogger().debug("Total:      {}", affect);
+            if (log.isDebugEnabled()) {
+                log.debug("Total:      {}", affect);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -760,7 +779,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         StringBuilder sb = new StringBuilder("select ")
                 .append(String.join(", ", example.getAggregates()))
                 .append(" from ")
-                .append(getTableName())
+                .append(tableName)
                 .append(toConditionSql(example));
 
         return selectList(sb.toString(), getConditionValues(example), handler);
@@ -770,7 +789,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         StringBuilder sb = new StringBuilder("select ")
                 .append(String.join(", ", example.getAggregates()))
                 .append(" from ")
-                .append(getTableName())
+                .append(tableName)
                 .append(toConditionSql(example));
 
         return selectOne(sb.toString(), getConditionValues(example), handler);
@@ -803,7 +822,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
 
     protected String appendPlaceholder(int size) {
-        StringBuilder sql = new StringBuilder();
+        StringBuilder sql = new StringBuilder(size * 2 + 2);
         sql.append("(");
         for (int i = 0; i < size; i++) {
             if (i == 0) {
@@ -817,7 +836,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     }
 
     protected List getConditionValues({{metadata.exampleClazzName}} example) {
-        List<Object> params = new ArrayList<>();
+        ArrayList<Object> params = new ArrayList<>();
         List<List<{{metadata.exampleClazzSimpleName}}.Criteria>> orConditions = example.getOrConditions();
         if (orConditions != null && !orConditions.isEmpty()) {
             for (List<{{metadata.exampleClazzSimpleName}}.Criteria> orCondition : orConditions) {
@@ -838,17 +857,17 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         {{#metadata.columnMetadataList}}
         if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
             if (criteria.getValue() != null) {
-                Object value = getDefaultTypeHandler().encode{{firstUpFieldName}}(({{javaType}}) criteria.getValue());
+                Object value = defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}}) criteria.getValue());
                 params.add(value);
                 return;
             }
             if (criteria.getSecondValue() != null) {
-                Object value = getDefaultTypeHandler().encode{{firstUpFieldName}}(({{javaType}}) criteria.getSecondValue());
+                Object value = defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}}) criteria.getSecondValue());
                 params.add(value);
                 return;
             }
             if (criteria.getListValue() != null) {
-                List values = getDefaultTypeHandler().encode{{firstUpFieldName}}List((List<{{javaType}}>) criteria.getListValue());
+                List values = defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{javaType}}>) criteria.getListValue());
                 params.addAll(values);
                 return;
             }
@@ -981,7 +1000,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     protected String toSelectByExampleSql({{metadata.exampleClazzName}} example) {
         boolean distinct = example.isDistinct();
         List<String> selectColumns = example.getColumns();
-        String table = getTableName();
+        String table = tableName;
         StringBuilder sql = new StringBuilder(32 + columnsStr.length());
 
         sql.append("select ");
@@ -1003,7 +1022,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     protected String toCountByExampleSql({{metadata.exampleClazzName}} example) {
         boolean distinct = example.isDistinct();
         List<String> selectColumns = example.getColumns();
-        String table = getTableName();
+        String table = tableName;
         StringBuilder sql = new StringBuilder();
 
         sql.append("select ");
@@ -1023,10 +1042,6 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         return sql.toString();
     }
 
-    protected String getTableName() {
-        return tableName;
-    }
-
     protected Connection getConnection() {
         return getConnection(false);
     }
@@ -1041,8 +1056,8 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                } else {
                    name = slaveDataSources.get((int) (counter.incrementAndGet() % slaveDataSources.size()));
                }
-               if(getLogger().isDebugEnabled()){
-                   getLogger().debug("Use slave dataSource {}",name);
+               if(log.isDebugEnabled()){
+                   log.debug("Use slave dataSource {}",name);
                }
                Connection connection =  dataSourceMap.get(name).getConnection();
                connection.setReadOnly(true);
@@ -1152,5 +1167,21 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             total = countByExample(q);
         }
         return new io.github.simple.jdbc.processor.PageInfo<>(page, size, total, ts);
+    }
+
+    protected String in(int size){
+        return " in " + appendPlaceholder(size);
+    }
+
+    protected String notIn(int size){
+        return " not in " + appendPlaceholder(size);
+    }
+
+    protected List<String> getColumns(){
+        return new ArrayList<>(this.columns);
+    }
+
+    protected String getColumnsStr() {
+        return this.columnsStr;
     }
 }
