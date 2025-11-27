@@ -59,9 +59,12 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
     private final String insertSqlPrefix;
 
+    private final String insertIgnoreSqlPrefix;
+
     private final String insertSql;
 
     private final String insertPlaceHolderSuffix;
+
 
     public {{metadata.repositoryClazzSimpleName}}() {
         this.tableName = "{{metadata.tableName}}";
@@ -79,6 +82,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         this.deleteByPrimaryKeySql = deletePrefix + primaryKeyCondition;
         this.deleteByPrimaryKeysSql = deletePrefix + primaryKeyInCondition;
         this.insertSqlPrefix = "insert into " + tableName + " (" + columnsStr + ") values ";
+        this.insertIgnoreSqlPrefix = "insert ignore into " + tableName + " (" + columnsStr + ") values ";
         this.insertPlaceHolderSuffix = appendPlaceholder(columns.size());;
         this.insertSql = insertSqlPrefix + insertPlaceHolderSuffix;
     }
@@ -104,6 +108,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         this.deleteByPrimaryKeySql = deletePrefix + primaryKeyCondition;
         this.deleteByPrimaryKeysSql = deletePrefix + primaryKeyInCondition;
         this.insertSqlPrefix = "insert into " + tableName + " (" + columnsStr + ") values ";
+        this.insertIgnoreSqlPrefix = "insert ignore into " + tableName + " (" + columnsStr + ") values ";
         this.insertPlaceHolderSuffix = appendPlaceholder(columns.size());;
         this.insertSql = insertSqlPrefix + insertPlaceHolderSuffix;
     }
@@ -337,6 +342,23 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
     }
 
+    public void insertIgnoreBatch(List<{{metadata.domainClazzName}}> ts, int batchSize) {
+        if (ts == null || ts.isEmpty()) {
+            throw new IllegalArgumentException("ts is null or empty");
+        }
+        int pages = ts.size() / batchSize;
+        for (int i = 0; i < pages; i++) {
+            int start = i * batchSize;
+            int end = start + batchSize;
+            List<{{metadata.domainClazzName}}> subList = ts.subList(start, end);
+            insertIgnoreBatch(subList);
+        }
+        if (ts.size() % batchSize != 0) {
+            List<{{metadata.domainClazzName}}> subList = ts.subList(pages * batchSize, ts.size());
+            insertIgnoreBatch(subList);
+        }
+    }
+
     public void insertBatch(List<{{metadata.domainClazzName}}> ts) {
         if (ts == null || ts.isEmpty()) {
             throw new IllegalArgumentException("ts is null or empty");
@@ -351,6 +373,49 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         int initCapacity = insertSqlPrefix.length() + 32 + (ts.size() * 2) + (insertPlaceHolderSuffix.length() * ts.size());
         StringBuilder sb = new StringBuilder(initCapacity)
             .append(insertSqlPrefix);
+        for ({{metadata.domainClazzName}} t : ts) {
+            sb.append(insertPlaceHolderSuffix);
+            sb.append(", ");
+            defaultTypeHandler.preInsert(t);
+            defaultTypeHandler.encode(params, t);
+        }
+        String sql = sb.delete(sb.length() - 2, sb.length()).toString();
+        sb = null;
+        List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql, params);
+        params = null;
+        {{#metadata.primaryMetadata.useGeneratedKeys}}
+        int index = 0;
+        for (int i = 0; i < ts.size(); i++) {
+            {{metadata.domainClazzName}} t = ts.get(i);
+            if(t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null){
+                ts.get(index).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKeys.get(index));
+                index++;
+            }
+            defaultTypeHandler.afterInsert(t);
+        }
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
+        {{^metadata.primaryMetadata.useGeneratedKeys}}
+        for (int i = 0; i < ts.size(); i++) {
+            {{metadata.domainClazzName}} t = ts.get(i);
+            defaultTypeHandler.afterInsert(t);
+        }
+        {{/metadata.primaryMetadata.useGeneratedKeys}}
+    }
+
+    public void insertIgnoreBatch(List<{{metadata.domainClazzName}}> ts) {
+        if (ts == null || ts.isEmpty()) {
+            throw new IllegalArgumentException("ts is null or empty");
+        }
+        if (ts.size() == 1) {
+            insertSelective(ts.get(0));
+            return;
+        }
+        defaultTypeHandler.batchGeneratePrimaryKey(ts);
+        ArrayList<Object> params = new ArrayList<>(columns.size() * ts.size());
+
+        int initCapacity = insertSqlPrefix.length() + 32 + (ts.size() * 2) + (insertPlaceHolderSuffix.length() * ts.size());
+        StringBuilder sb = new StringBuilder(initCapacity)
+            .append(insertIgnoreSqlPrefix);
         for ({{metadata.domainClazzName}} t : ts) {
             sb.append(insertPlaceHolderSuffix);
             sb.append(", ");
@@ -875,8 +940,10 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         {{/metadata.columnMetadataList}}
 
     }
-
-    protected String toConditionSql({{metadata.exampleClazzName}} example) {
+    protected String toConditionSql({{metadata.exampleClazzName}} example){
+        return toConditionSql(example, false);
+    }
+    protected String toConditionSql({{metadata.exampleClazzName}} example, boolean isCount) {
         List<List<{{metadata.exampleClazzName}}.Criteria>> orConditions = example.getOrConditions();
 
         String orderByClause = example.getOrderByClause();
@@ -957,7 +1024,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
 
 
-        if (limit != null && !limit.isEmpty()) {
+        if (!isCount && limit != null && !limit.isEmpty()) {
             sql.append(" limit ");
             if (limit.size() == 1) {
                 sql.append(limit.get(0));
@@ -1038,7 +1105,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
         sql.append(" from ");
         sql.append(table);
-        sql.append(toConditionSql(example));
+        sql.append(toConditionSql(example,true));
         return sql.toString();
     }
 
