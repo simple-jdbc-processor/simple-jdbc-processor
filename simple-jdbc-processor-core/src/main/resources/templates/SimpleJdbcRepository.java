@@ -427,13 +427,8 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         List<{{metadata.primaryMetadata.javaType}}> primaryKeys = insertBatch(sql, params);
         params = null;
         {{#metadata.primaryMetadata.useGeneratedKeys}}
-        int index = 0;
         for (int i = 0; i < ts.size(); i++) {
             {{metadata.domainClazzName}} t = ts.get(i);
-            if(t.get{{metadata.primaryMetadata.firstUpFieldName}}() == null){
-                ts.get(index).set{{metadata.primaryMetadata.firstUpFieldName}}(primaryKeys.get(index));
-                index++;
-            }
             defaultTypeHandler.afterInsert(t);
         }
         {{/metadata.primaryMetadata.useGeneratedKeys}}
