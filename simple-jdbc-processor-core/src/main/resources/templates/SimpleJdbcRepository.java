@@ -1128,7 +1128,15 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                 throw new RuntimeException(e);
             }
         }
-        return org.springframework.jdbc.datasource.DataSourceUtils.getConnection(this.getDataSource());
+        Connection connection = org.springframework.jdbc.datasource.DataSourceUtils.getConnection(this.getDataSource());
+        try{
+            if (connection.isClosed()){
+                return this.getDataSource().getConnection();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return connection;
     }
     {{/metadata.useSpring}}
 
