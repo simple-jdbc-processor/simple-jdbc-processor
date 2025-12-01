@@ -638,7 +638,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
             throw new RuntimeException(e);
         } finally {
             if (autoCommit) {
-                close(connection);
+                closeCheckTx(connection);
             }
         }
         if (log.isDebugEnabled()) {
@@ -1111,7 +1111,24 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     {{#metadata.useSpring}}
     protected Connection getConnection(boolean isSelect) {
         if ({{{metadata.readOnly}}}){
+            if(!isSelect){
+                throw new RuntimeException("ReadOnly connection is not allowed to execute update operation");
+            }
             try{
+                String name;
+                if(!slaveDataSources.isEmpty()){
+                    if(slaveDataSources.size() == 1){
+                        name = slaveDataSources.get(0);
+                    } else {
+                        name = slaveDataSources.get((int) (counter.incrementAndGet() % slaveDataSources.size()));
+                    }
+                    if(log.isDebugEnabled()){
+                        log.debug("Use slave dataSource {}",name);
+                    }
+                    Connection connection =  dataSourceMap.get(name).getConnection();
+                    connection.setReadOnly(true);
+                    return connection;
+                }
                 Connection connection =  this.getDataSource().getConnection();
                 connection.setReadOnly(true);
                 return connection;
