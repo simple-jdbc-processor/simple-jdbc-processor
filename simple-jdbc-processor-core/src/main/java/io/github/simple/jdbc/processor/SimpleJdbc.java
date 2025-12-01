@@ -27,6 +27,10 @@ public @interface SimpleJdbc {
      */
     String[] slaveDataSources() default {};
 
+    /**
+     * 是否只读,默认false.
+     */
+    boolean readOnly() default false;
 
     /**
      * 方言.

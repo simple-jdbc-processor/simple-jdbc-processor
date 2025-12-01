@@ -141,6 +141,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
 
         DialectMetadata dialect = example.dialect().getValue();
         TableMetadata tableMetadata = new TableMetadata()
+                .setReadOnly(example.readOnly())
                 .setDomainClazzName(clazzName)
                 .setExampleClazzName(exampleName)
                 .setPackageName(getPackageName(packageOf))

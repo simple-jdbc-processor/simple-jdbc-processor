@@ -62,6 +62,8 @@ public class TableMetadata {
     private boolean mssql;
     private boolean none;
     private boolean extendsSimpleJdbcRepository;
+    private boolean readOnly;
+
 
 
     public String getTableName() {
@@ -358,6 +360,15 @@ public class TableMetadata {
 
     public TableMetadata setAuditSql(boolean auditSql) {
         this.auditSql = auditSql;
+        return this;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public TableMetadata setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
         return this;
     }
 }

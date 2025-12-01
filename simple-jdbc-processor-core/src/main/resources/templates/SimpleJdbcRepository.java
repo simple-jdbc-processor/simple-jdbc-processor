@@ -1110,6 +1110,15 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
     {{#metadata.useSpring}}
     protected Connection getConnection(boolean isSelect) {
+        if ({{{metadata.readOnly}}}){
+            try{
+                Connection connection =  this.getDataSource().getConnection();
+                connection.setReadOnly(true);
+                return connection;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
         if(isSelect && !slaveDataSources.isEmpty() && !isActualTransactionActive()){
             try {
                String name;
