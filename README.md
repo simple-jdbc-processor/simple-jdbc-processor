@@ -30,7 +30,7 @@ maven 编译插件:
             <path>
                 <artifactId>simple-jdbc-processor-core</artifactId>
                 <groupId>com.github.simple-jdbc-processor</groupId>
-                <version>1.0.0</version>
+                <version>1.2.1</version>
             </path>
         </annotationProcessorPaths>
     </configuration>
@@ -75,7 +75,7 @@ public class Comment {
 
 ```
 CommentExample query = CommentExample.create()
-    .andUserIdEqualTo("1","2")
+    .andUserIdEqualTo("1")
     .page(1,10);
 List<Comment> comments = commentRepository.selectByExample(query);
 ```
