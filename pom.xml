@@ -6,7 +6,7 @@
     <artifactId>simple-jdbc-processor</artifactId>
     <name>simple-jdbc-processor</name>
     <packaging>pom</packaging>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <description>Mybatis processor parent</description>
 
     <url>https://github.com/simple-jdbc-processor/simple-jdbc-processor</url>

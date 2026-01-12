@@ -1,11 +1,16 @@
 package io.github.simple.jdbc.processor;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.util.List;
 import java.util.Map;
 
 public class BaseService<T, ID, Example> {
 
-    private final SimpleJdbcRepository<T, ID, Example> repository;
+    private SimpleJdbcRepository<T, ID, Example> repository;
+
+    public BaseService() {
+    }
 
     public BaseService(SimpleJdbcRepository<T, ID, Example> repository) {
         this.repository = repository;
@@ -94,4 +99,10 @@ public class BaseService<T, ID, Example> {
         return new PageInfo<>(page, size, total, ts);
     }
 
+    @Autowired
+    protected void setRepository(SimpleJdbcRepository<T, ID, Example> repository) {
+        if (this.repository == null) {
+            this.repository = repository;
+        }
+    }
 }

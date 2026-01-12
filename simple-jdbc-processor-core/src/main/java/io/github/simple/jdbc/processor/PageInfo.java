@@ -17,7 +17,12 @@ public class PageInfo<T> implements Serializable {
 
     private List<T> data;
 
-    private PageInfo(){};
+    private String nextId;
+
+    private PageInfo() {
+    }
+
+    ;
 
     public PageInfo(int page, int size, long total, List<T> data) {
         this.page = page;
@@ -81,7 +86,15 @@ public class PageInfo<T> implements Serializable {
     }
 
     public boolean hasNext() {
-        return this.page < this.getPages();
+        return this.page < this.getPages() || nextId != null;
+    }
+
+    public void setNextId(String nextId) {
+        this.nextId = nextId;
+    }
+
+    public String getNextId() {
+        return nextId;
     }
 
     @Override
@@ -92,6 +105,7 @@ public class PageInfo<T> implements Serializable {
                 ", total=" + total +
                 ", pages=" + pages +
                 ", data=" + data +
+                ", nextId='" + nextId + '\'' +
                 '}';
     }
 }
