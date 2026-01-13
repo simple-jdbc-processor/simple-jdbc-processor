@@ -6,8 +6,8 @@
     <artifactId>simple-jdbc-processor</artifactId>
     <name>simple-jdbc-processor</name>
     <packaging>pom</packaging>
-    <version>1.2.1</version>
-    <description>Mybatis processor parent</description>
+    <version>1.2.2</version>
+    <description>Simple jdbc processor parent</description>
 
     <url>https://github.com/simple-jdbc-processor/simple-jdbc-processor</url>
     <modelVersion>4.0.0</modelVersion>
@@ -42,7 +42,7 @@
 
     <developers>
         <developer>
-            <name>Yu.wu</name>
+            <name>191287278</name>
             <email>191287278@qq.com</email>
             <organization>https://github.com/simple-jdbc-processor</organization>
             <timezone>+8</timezone>

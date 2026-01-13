@@ -562,38 +562,6 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         return list;
     }
 
-    private <T> T selectOne(String sql, List params, Class<T> clazz) {
-        List<T> ts = selectList(sql, params, clazz);
-        return ts.isEmpty() ? null : ts.get(0);
-    }
-
-    private <T> List<T> selectList(String sql, List params, Class<T> clazz) {
-        defaultTypeHandler.auditSql(log, sql, params);
-        defaultTypeHandler.postSelect(sql, params);
-        List<T> list = null;
-        Connection connection = getConnection(true);
-        if (log.isDebugEnabled()) {
-            log.debug("Preparing:  {}", sql);
-            log.debug("Parameters: {}", paramsToString(params));
-        }
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            defaultTypeHandler.setParameters(statement, params);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                String cacheKey = sql.length() > 1024 ? sql.substring(0,1024) : sql;
-                list = io.github.simple.jdbc.processor.util.EntityHelper.getResultList(cacheKey, resultSet, clazz);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } finally {
-            closeCheckTx(connection);
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Total:      {}", list.size());
-        }
-        return list == null ? new ArrayList<>() : list;
-    }
-
-
     public void consumeByExample({{metadata.exampleClazzName}} example, Consumer<{{metadata.domainClazzName}}> consume) {
         String sql = toSelectByExampleSql(example);
         List<String> columns = example.getColumns();

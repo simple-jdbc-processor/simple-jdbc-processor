@@ -123,6 +123,9 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         getCollection().updateOne(filter, update, new UpdateOptions().upsert(true));
     }
 
+    public void insertIgnoreBatch(List<{{metadata.domainClazzName}}> ts){
+        insertBatch(ts);
+    }
     
     public void insertBatch(List<{{metadata.domainClazzName}}> ts) {
         if (ts == null || ts.isEmpty()) {

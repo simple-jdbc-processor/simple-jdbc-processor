@@ -18,7 +18,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
-import javax.persistence.*;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.*;
@@ -62,7 +61,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                     DialectMetadata dialect = example.dialect().getValue();
                     if (example.dialect() == DialectEnums.POSTGRES) {
                         tableMetadata.setPostgres(true);
-                    }else if (example.dialect() == DialectEnums.MYSQL) {
+                    } else if (example.dialect() == DialectEnums.MYSQL) {
                         tableMetadata.setMysql(true);
                     } else if (example.dialect() == DialectEnums.MSSQL) {
                         tableMetadata.setMssql(true);
@@ -133,7 +132,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
 
     public TableMetadata readTableMetadata(Element element) throws IOException {
         SimpleJdbc example = element.getAnnotation(SimpleJdbc.class);
-        Table table = element.getAnnotation(Table.class);
+        String tableName = getTableName(element);
         PackageElement packageOf = processingEnv.getElementUtils().getPackageOf(element);
         String clazzName = getPackageName(element);
 
@@ -163,9 +162,9 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
         tableMetadata.setRepositoryClazzName(repositoryName)
                 .setTypeHandlerClazzName(simpleJdbcDefaultTypeHandler)
                 .setShardRepositoryClazzName(shardRepositoryClassName)
-                .setTableName(table != null ? table.name() : String.join("_",
+                .setTableName(tableName != null ? tableName : String.join("_",
                         CamelUtils.split(tableMetadata.getDomainClazzSimpleName(), true)));
-        if (!useUnderLine && table == null) {
+        if (!useUnderLine && tableName == null) {
             tableMetadata.setTableName(CamelUtils.firstLow(tableMetadata.getDomainClazzSimpleName()));
         }
         String mongoCollectionName = extraDocumentName(element);
@@ -194,62 +193,40 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
         }
 
         for (Element member : element.getEnclosedElements()) {
-            if (member.getModifiers().contains(Modifier.STATIC) || !member.getKind().isField() ||
-                    member.getAnnotation(Transient.class) != null ||
-                    member.getAnnotation(ManyToOne.class) != null) {
+            if (member.getModifiers().contains(Modifier.STATIC) || !member.getKind().isField()) {
                 continue;
             }
 
             String name = member.toString();
 
-            Id id = member.getAnnotation(Id.class);
-            Column column = member.getAnnotation(Column.class);
-            GeneratedValue generatedValue = member.getAnnotation(GeneratedValue.class);
             ColumnMetadata columnMetadata = new ColumnMetadata();
             member.asType().accept(domainTypeVisitor, columnMetadata);
             columnMetadata.setFieldName(name)
                     .setColumnName(name)
-                    .setUseGeneratedKeys(generatedValue != null)
-                    .setPrimary(id != null);
-
-
-            if (useUnderLine) {
-                if (column == null || "".equals(column.name())) {
-                    columnMetadata.setColumnName(String.join("_", CamelUtils.split(name, true)));
-                }
-            }
-
-            if (column != null && !"".equals(column.name())) {
-                columnMetadata.setColumnName(column.name());
-            }
-
-            if (column != null) {
-                columnMetadata.setInsertable(column.insertable());
-                columnMetadata.setUpdatable(column.updatable());
-            }
-
-            if (id != null || "_id".equalsIgnoreCase(name)) {
+                    .setColumnName(String.join("_", CamelUtils.split(name, true)));
+            if ("_id".equalsIgnoreCase(name)) {
                 columnMetadata.setPrimary(true);
                 tableMetadata.setPrimaryMetadata(columnMetadata);
             }
 
+
+            extractAnnotationValues(member, example.dialect(), columnMetadata, tableMetadata.getColumnMetadataList());
+
             columnMetadata.setOriginColumnName(columnMetadata.getColumnName());
+
+            String docComment = elementUtils.getDocComment(member);
+            columnMetadata.setJavaDoc(docComment);
 
             String columnName = columnMetadata.getColumnName();
             if (keywords.contains(columnName)) {
                 columnMetadata.setColumnName(tableMetadata.getLeftEncode() + columnName + tableMetadata.getRightEncode());
             }
-            String docComment = elementUtils.getDocComment(member);
-            columnMetadata.setJavaDoc(docComment);
-            // 如果没有@Column注解,解析jsonProperty,BjsonProerty注解
-            if (column == null) {
-                extractAnnotationValues(member, example.dialect(), columnMetadata, tableMetadata.getColumnMetadataList());
-                if (columnMetadata.isPrimary()) {
-                    tableMetadata.setPrimaryMetadata(columnMetadata);
-                }
-            } else {
-                tableMetadata.getColumnMetadataList().add(columnMetadata);
+
+            if (columnMetadata.isPrimary()) {
+                tableMetadata.setPrimaryMetadata(columnMetadata);
             }
+
+
         }
 
         if (tableMetadata.getPrimaryMetadata() == null && !tableMetadata.getColumnMetadataList().isEmpty()) {
@@ -328,11 +305,13 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
 
             String annotationName = annotationElement.getSimpleName().toString();
 
-            if ("JsonIgnore".equalsIgnoreCase(annotationName) || "BsonIgnore".equalsIgnoreCase(annotationName)) {
+            if ("JsonIgnore".equalsIgnoreCase(annotationName) || "BsonIgnore".equalsIgnoreCase(annotationName) ||
+                    "Transient".equalsIgnoreCase(annotationName) || "OneToOne".equalsIgnoreCase(annotationName) ||
+                    "ManyToOne".equalsIgnoreCase(annotationName)) {
                 add = false;
             }
-            if ("BsonProperty".equalsIgnoreCase(annotationName) || "JsonProperty".equalsIgnoreCase(annotationName)
-                    || "Field".equalsIgnoreCase(annotationName) || "TableField".equalsIgnoreCase(annotationName)) {
+            if ("BsonProperty".equalsIgnoreCase(annotationName) || "JsonProperty".equalsIgnoreCase(annotationName) || "Field".equalsIgnoreCase(annotationName) ||
+                    "TableField".equalsIgnoreCase(annotationName)) {
                 // 3. 提取注解的属性值（如 "name"、"length"）
                 for (Element attr : annotationElement.getEnclosedElements()) {
                     if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
@@ -377,11 +356,74 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                     }
                 }
             }
+
+            if ("Column".equalsIgnoreCase(annotationName)) {
+                // 3. 提取注解的属性值（如 "name"、"length"）
+                for (Element attr : annotationElement.getEnclosedElements()) {
+                    if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
+                        String attrName = attr.getSimpleName().toString();
+                        // 获取属性值
+                        Object attrValue = getAnnotationValue(annotationMirror, attrName);
+
+                        if ("name".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            columnMetadata.setColumnName(attrValue.toString());
+                        }
+                        if ("insertable".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            columnMetadata.setInsertable(Boolean.parseBoolean(attrValue.toString()));
+                        }
+                        if ("updatable".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            columnMetadata.setUpdatable(Boolean.parseBoolean(attrValue.toString()));
+                        }
+                    }
+                }
+            }
+            if ("Version".equalsIgnoreCase(annotationName)) {
+                columnMetadata.setVersion(true);
+            }
+            if ("GeneratedValue".equalsIgnoreCase(annotationName)) {
+                columnMetadata.setUseGeneratedKeys(true);
+            }
         }
 
         if (add) {
             columnMetadataList.add(columnMetadata);
         }
+    }
+
+    private String getTableName(Element element) {
+        for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+
+            DeclaredType annotationType = annotationMirror.getAnnotationType();
+            TypeElement annotationElement = (TypeElement) annotationType.asElement();
+            String annotationName = annotationElement.getSimpleName().toString();
+            if ("Table".equalsIgnoreCase(annotationName)) {
+                for (Element attr : annotationElement.getEnclosedElements()) {
+                    if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
+                        String attrName = attr.getSimpleName().toString();
+                        // 获取属性值
+                        Object attrValue = getAnnotationValue(annotationMirror, attrName);
+
+                        if ("name".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            return attrValue.toString();
+                        }
+                    }
+                }
+            }
+            if ("TableName".equalsIgnoreCase(annotationName)) {
+                for (Element attr : annotationElement.getEnclosedElements()) {
+                    if (attr.getKind() == ElementKind.METHOD) { // 注解属性本质是方法
+                        String attrName = attr.getSimpleName().toString();
+                        // 获取属性值
+                        Object attrValue = getAnnotationValue(annotationMirror, attrName);
+
+                        if ("value".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            return attrValue.toString();
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     /**

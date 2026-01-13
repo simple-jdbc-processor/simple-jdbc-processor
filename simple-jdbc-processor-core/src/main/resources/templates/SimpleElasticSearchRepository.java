@@ -200,6 +200,9 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
     }
 
+    public void insertIgnoreBatch(List<{{metadata.domainClazzName}}> ts){
+        insertBatch(ts);
+    }
     
     public void insertBatch(List<{{metadata.domainClazzName}}> ts) {
         List<BulkOperation> operations = ts.stream()

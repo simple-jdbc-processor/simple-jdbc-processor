@@ -48,6 +48,10 @@ public class BaseService<T, ID, Example> {
         this.repository.insertBatch(ts);
     }
 
+    public void insertIgnoreBatch(List<T> ts) {
+        this.repository.insertIgnoreBatch(ts);
+    }
+
     public void upsertSelective(T t) {
         this.repository.upsertSelective(t);
     }
@@ -100,7 +104,7 @@ public class BaseService<T, ID, Example> {
     }
 
     @Autowired
-    protected void setRepository(SimpleJdbcRepository<T, ID, Example> repository) {
+    protected synchronized void setRepository(SimpleJdbcRepository<T, ID, Example> repository) {
         if (this.repository == null) {
             this.repository = repository;
         }

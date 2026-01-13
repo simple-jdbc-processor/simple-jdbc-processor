@@ -29,6 +29,8 @@ public interface SimpleJdbcRepository<T, ID, Example> {
 
     void insertBatch(List<T> ts);
 
+    void insertIgnoreBatch(List<T> ts);
+
     long countByExample(Example query);
 
     int updateByPrimaryKeySelective(T t);
@@ -52,4 +54,5 @@ public interface SimpleJdbcRepository<T, ID, Example> {
     List<T> selectByPrimaryKeysWithSorted(List<ID> ids);
 
     Map<ID, T> mapById(List<ID> ids);
+
 }
