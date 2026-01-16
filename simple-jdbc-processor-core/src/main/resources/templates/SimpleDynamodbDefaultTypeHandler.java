@@ -35,6 +35,13 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
         return getAttributeValue(value);
     }
 
+    public AttributeValue encode{{firstUpFieldName}}List(List<{{javaType}}> value, Class<{{javaType}}> javaType) {
+        if(javaType.isAssignableFrom(Number.class)){
+            return AttributeValue.builder().ns(value.stream().map(String::valueOf).collect(Collectors.toList())).build();
+        }
+        return AttributeValue.builder().ss(value.stream().map(String::valueOf).collect(Collectors.toList())).build();
+    }
+
 {{/metadata.columnMetadataList}}
 
     public AttributeValue getAttributeValue(Object value) {

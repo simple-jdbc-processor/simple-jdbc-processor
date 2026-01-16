@@ -24,7 +24,7 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
 
     private final String tableName = "{{metadata.tableName}}";
 
-    private DynamoDbClient dynamoDbClient;
+    protected DynamoDbClient dynamoDbClient;
 
     private {{metadata.typeHandlerClazzName}} defaultTypeHandler = new {{metadata.typeHandlerClazzName}}();
 
@@ -68,7 +68,8 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
     public List<{{metadata.domainClazzName}}> selectByExample({{metadata.exampleClazzName}} query) {
         QueryRequest queryRequest = toQueryRequest(query);
         QueryResponse queryResponse = dynamoDbClient.query(queryRequest);
-        Map<String, AttributeValue> stringAttributeValueMap = queryResponse.lastEvaluatedKey();
+        Map<String, AttributeValue> lastEvaluatedKey = queryResponse.lastEvaluatedKey();
+        query.setLastEvaluatedKey(lastEvaluatedKey);
         return queryResponse.items().stream().map(defaultTypeHandler::decode).collect(Collectors.toList());
     }
 
@@ -219,9 +220,18 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
         for ({{metadata.domainClazzName}} t : selectByPrimaryKeys(keyPairs)) {
             KeyPair keyPair = new KeyPair();
 
-            keyPair.setHashKey(t.getUserId());
-            keyPair.setRangeKey(t.getSortKey());
-
+            {{#metadata.columnMetadataList}}
+            {{#dynamodbHashKey}}
+            if(t.get{{firstUpFieldName}}() != null){
+                keyPair.setHashKey(t.get{{firstUpFieldName}}());
+            }
+            {{/dynamodbHashKey}}
+            {{#dynamodbRangeKey}}
+            if(t.get{{firstUpFieldName}}() != null){
+                keyPair.setRangeKey(t.get{{firstUpFieldName}}());
+            }
+            {{/dynamodbRangeKey}}
+            {{/metadata.columnMetadataList}}
             result.put(keyPair, t);
         }
         return result;
@@ -243,23 +253,29 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
             String condition = critery.getCondition();
             String column = critery.getColumn();
             Object value = critery.getValue();
+            List listValue = critery.getListValue();
             String varName = ":" + column;
             String expression = column + condition + varName;
 
-            if (column.equalsIgnoreCase("sortKey")) {
-                keyExpressions.add(expression);
-                expressionAttributeValues.put(varName, AttributeValue.builder().s(value.toString()).build());
-                continue;
-            }
 
-            if (column.equalsIgnoreCase("userId")) {
-                keyExpressions.add(expression);
-                expressionAttributeValues.put(varName, AttributeValue.builder().s(value.toString()).build());
-                continue;
+            {{#metadata.columnMetadataList}}
+            if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
+                AttributeValue attributeValue;
+                if (listValue != null){
+                    attributeValue = defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{javaType}}>) listValue,{{javaType}}.class);
+                 } else{
+                    attributeValue = defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}}) value);
+                }
+                expressionAttributeValues.put(varName, attributeValue);
+                if({{{dynamodbHashKey}}}){
+                    keyExpressions.add(expression);
+                } else if({{{dynamodbRangeKey}}}){
+                    keyExpressions.add(expression);
+                } else {
+                    filterExpressions.add(expression);
+                }
             }
-
-            filterExpressions.add(expression);
-            expressionAttributeValues.put(varName, AttributeValue.builder().s(value.toString()).build());
+            {{/metadata.columnMetadataList}}
         }
 
         builder.expressionAttributeValues(expressionAttributeValues);
@@ -270,6 +286,9 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
             builder.filterExpression(String.join(" and ", filterExpressions));
         }
 
+        if(query.getLastEvaluatedKey() !=null && !query.getLastEvaluatedKey().isEmpty()){
+            builder.exclusiveStartKey(query.getLastEvaluatedKey());
+        }
         return builder.build();
     }
 

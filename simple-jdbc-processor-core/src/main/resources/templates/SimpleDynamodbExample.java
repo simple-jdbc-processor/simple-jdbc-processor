@@ -1,9 +1,6 @@
 package {{metadata.packageName}};
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 
 @SuppressWarnings("unchecked")
@@ -20,6 +17,8 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
     private List<String> columns;
 
     private List<Criteria> criteries = new ArrayList<>();
+
+    private Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue > lastEvaluatedKey;
 
     public {{metadata.exampleClazzSimpleName}}() {}
 
@@ -55,31 +54,6 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotEqualTo({{javaType}} value) {
-        criteries.add(new Criteria("{{columnName}}", " <> ", value));
-        return this;
-    }
-
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}In(List<{{javaType}}> values) {
-        criteries.add(new Criteria("{{columnName}}", " in ", values));
-        return this;
-    }
-
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}In({{javaType}}... values) {
-        and{{firstUpFieldName}}In(Arrays.asList(values));
-        return this;
-    }
-
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotIn(List<{{javaType}}> values) {
-        criteries.add(new Criteria("{{columnName}}", " not in ", values));
-        return this;
-    }
-
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotIn({{javaType}}... values) {
-        and{{firstUpFieldName}}NotIn(Arrays.asList(values));
-        return this;
-    }
-
     public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThan({{javaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " > ", value));
         return this;
@@ -108,6 +82,11 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 
+    public {{metadata.exampleClazzSimpleName}} setLastEvaluatedKey(Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue> lastEvaluatedKey) {
+        this.lastEvaluatedKey = lastEvaluatedKey;
+        return this;
+    }
+
     public List<Criteria> getCriteries() {
         return this.criteries;
     }
@@ -118,6 +97,10 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     public Integer getLimit() {
         return limit;
+    }
+
+    public Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue> getLastEvaluatedKey(){
+        return lastEvaluatedKey;
     }
 
     public static interface Column {
@@ -215,5 +198,7 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
             this.listValue = listValue;
         }
     }
+
+
 
 }
