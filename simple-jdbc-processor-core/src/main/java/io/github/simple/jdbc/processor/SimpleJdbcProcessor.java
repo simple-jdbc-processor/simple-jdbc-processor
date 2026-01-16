@@ -374,8 +374,12 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                         if ("updatable".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
                             columnMetadata.setUpdatable(Boolean.parseBoolean(attrValue.toString()));
                         }
+                        if ("columnDefinition".equals(attrName) && attrValue != null && !attrValue.toString().isEmpty()) {
+                            columnMetadata.setJdbcType(attrValue.toString());
+                        }
                     }
                 }
+                add = true;
             }
             if ("Version".equalsIgnoreCase(annotationName)) {
                 columnMetadata.setVersion(true);

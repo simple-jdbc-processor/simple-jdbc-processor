@@ -44,6 +44,10 @@ public class ColumnMetadata {
 
     private boolean knowResultSetType;
 
+    private boolean dynamodbHashKey;
+
+    private boolean dynamodbRangeKey;
+
     public String getFieldName() {
         return fieldName;
     }
@@ -75,6 +79,12 @@ public class ColumnMetadata {
 
     public ColumnMetadata setJdbcType(String jdbcType) {
         this.jdbcType = jdbcType;
+        if ("HASHKEY".equalsIgnoreCase(jdbcType)) {
+            this.dynamodbHashKey = true;
+        }
+        if ("RANGEKEY".equalsIgnoreCase(jdbcType)) {
+            this.dynamodbRangeKey = true;
+        }
         return this;
     }
 
@@ -133,7 +143,7 @@ public class ColumnMetadata {
             setCollection(true);
         }
         setSqlJavaType(fullJavaType);
-        if(fullJavaType.equalsIgnoreCase("java.util.Date")) {
+        if (fullJavaType.equalsIgnoreCase("java.util.Date")) {
             setSqlJavaType("java.sql.Date");
         }
         return this;
@@ -270,5 +280,21 @@ public class ColumnMetadata {
 
     public void setSqlJavaType(String sqlJavaType) {
         this.sqlJavaType = sqlJavaType;
+    }
+
+    public boolean isDynamodbHashKey() {
+        return dynamodbHashKey;
+    }
+
+    public void setDynamodbHashKey(boolean dynamodbHashKey) {
+        this.dynamodbHashKey = dynamodbHashKey;
+    }
+
+    public boolean isDynamodbRangeKey() {
+        return dynamodbRangeKey;
+    }
+
+    public void setDynamodbRangeKey(boolean dynamodbRangeKey) {
+        this.dynamodbRangeKey = dynamodbRangeKey;
     }
 }

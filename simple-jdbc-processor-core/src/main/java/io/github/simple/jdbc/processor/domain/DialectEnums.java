@@ -43,6 +43,11 @@ public enum DialectEnums {
             .setRepositoryTemplatePath("templates/SimpleElasticSearchRepositoryV9.java")
             .setTypeHandlerTemplatePath("templates/SimpleElasticSearchDefaultTypeHandlerV9.java")
     ),
+    DYNAMODB(new DialectMetadata()
+            .setExampleJavaTemplatePath("templates/SimpleDynamodbExample.java")
+            .setRepositoryTemplatePath("templates/SimpleDynamodbRepository.java")
+            .setTypeHandlerTemplatePath("templates/SimpleDynamodbDefaultTypeHandler.java")
+    ),
     ;
 
     private final DialectMetadata value;
