@@ -49,8 +49,10 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
         KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
                 .keys(ts.stream().map(defaultTypeHandler::encode).collect(Collectors.toList()))
                 .build();
+        Map<String,KeysAndAttributes> keysAndAttributesMap = new HashMap<>();
+        keysAndAttributesMap.put(tableName,keysAndAttributes);
         BatchGetItemRequest request = BatchGetItemRequest.builder()
-                .requestItems(Map.of(tableName, keysAndAttributes))
+                .requestItems(keysAndAttributesMap)
                 .build();
         BatchGetItemResponse response = dynamoDbClient.batchGetItem(request);
         List<{{metadata.domainClazzName}}> result = new ArrayList<>();
