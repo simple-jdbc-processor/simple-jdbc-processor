@@ -302,6 +302,7 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
         return builder.build();
     }
 
+{{#metadata.dataSource}}@org.springframework.beans.factory.annotation.Qualifier("{{metadata.dataSource}}"){{/metadata.dataSource}}
     @Autowired
     public void setDynamoDbClient(DynamoDbClient dynamoDbClient){
         this.dynamoDbClient = dynamoDbClient;

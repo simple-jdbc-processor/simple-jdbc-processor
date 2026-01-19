@@ -532,6 +532,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         return (List<FieldValue>) values.stream().map(this::toFieldValue).collect(Collectors.toList());
     }
 
+{{#metadata.dataSource}}@org.springframework.beans.factory.annotation.Qualifier("{{metadata.dataSource}}"){{/metadata.dataSource}}
     @Autowired
     public void setElasticsearchClient(ElasticsearchClient elasticsearchClient) {
         this.elasticsearchClient = elasticsearchClient;
