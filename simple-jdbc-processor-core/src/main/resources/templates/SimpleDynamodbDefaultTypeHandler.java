@@ -27,7 +27,12 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
     public void decode{{firstUpFieldName}}(Map<String,AttributeValue> m, {{metadata.domainClazzName}} t, String column){
         AttributeValue {{fieldName}} = m.get(column);
         if ({{fieldName}} != null) {
-            t.set{{firstUpFieldName}}(({{fullJavaType}}) getValue({{fieldName}}, {{fieldName}}.getClass()));
+            {{^collection}}
+            t.set{{firstUpFieldName}}(({{fullJavaType}}) getValue({{fieldName}}, {{fullJavaType}}.class));
+            {{/collection}}
+            {{#collection}}
+            t.set{{firstUpFieldName}}(({{fullJavaType}}) getValue({{fieldName}}, {{collectionType}}.class));
+            {{/collection}}
         }
     }
 

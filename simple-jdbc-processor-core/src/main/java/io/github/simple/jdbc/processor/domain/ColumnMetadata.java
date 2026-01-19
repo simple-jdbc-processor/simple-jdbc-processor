@@ -143,11 +143,13 @@ public class ColumnMetadata {
                 || fullJavaType.contains("java.util.Map")
                 || fullJavaType.contains("java.util.HashMap")) {
             setCollection(true);
-            setCollectionType(fullJavaType.substring(0,fullJavaType.indexOf("<")));
+            if(fullJavaType.contains("<")){
+                setCollectionType(fullJavaType.substring(0,fullJavaType.indexOf("<")));
+            }
         }
         setSqlJavaType(fullJavaType);
         if (fullJavaType.equalsIgnoreCase("java.util.Date")) {
-            setSqlJavaType("java.sql.Date");
+            setSqlJavaType("java.sql.Timestamp");
         }
         return this;
     }

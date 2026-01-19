@@ -138,7 +138,7 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 {{#metadata.columnMetadataList}}
-
+    {{^collection}}
     public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}IsNull() {
         criteries.add(new Criteria("{{columnName}}", " is null "));
         return this;
@@ -213,7 +213,7 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         criteries.add(new Criteria("{{columnName}}", " like ", value));
         return this;
     }
-
+    {{/collection}}
 {{/metadata.columnMetadataList}}
 
     public {{metadata.exampleClazzSimpleName}} orderBy(String orderByClause) {
