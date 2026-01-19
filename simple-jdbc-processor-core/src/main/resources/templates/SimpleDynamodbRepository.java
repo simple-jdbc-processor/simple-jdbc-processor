@@ -291,6 +291,14 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
         if(query.getLastEvaluatedKey() !=null && !query.getLastEvaluatedKey().isEmpty()){
             builder.exclusiveStartKey(query.getLastEvaluatedKey());
         }
+
+        if(query.getScanIndexForward() != null){
+            builder.scanIndexForward(query.getScanIndexForward());
+        }
+
+        if(query.getIndexName() != null && !query.getIndexName().isEmpty()){
+            builder.indexName(query.getIndexName());
+        }
         return builder.build();
     }
 

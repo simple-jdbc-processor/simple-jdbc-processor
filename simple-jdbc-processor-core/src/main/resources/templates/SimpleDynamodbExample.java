@@ -20,6 +20,10 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     private Map<String, software.amazon.awssdk.services.dynamodb.model.AttributeValue > lastEvaluatedKey;
 
+    private Boolean scanIndexForward = true;
+
+    private String indexName;
+
     public {{metadata.exampleClazzSimpleName}}() {}
 
     public static {{metadata.exampleClazzSimpleName}} create(){
@@ -44,6 +48,29 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
     public {{metadata.exampleClazzSimpleName}} ignoreColumns(String... ignoreColumns) {
         ignoreColumns(Arrays.asList(ignoreColumns));
+        return this;
+    }
+
+    public {{metadata.exampleClazzSimpleName}} desc() {
+        this.scanIndexForward = false;
+        return this;
+    }
+
+    public {{metadata.exampleClazzSimpleName}} asc() {
+        this.scanIndexForward = true;
+        return this;
+    }
+
+    public Boolean getScanIndexForward() {
+        return scanIndexForward;
+    }
+
+    public String getIndexName() {
+        return indexName;
+    }
+
+    public {{metadata.exampleClazzSimpleName}} indexName(String indexName) {
+        this.indexName = indexName;
         return this;
     }
 
