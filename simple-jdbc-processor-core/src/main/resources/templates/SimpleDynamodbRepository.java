@@ -262,12 +262,7 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
 
             {{#metadata.columnMetadataList}}
             if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
-                AttributeValue attributeValue;
-                if (listValue != null){
-                    attributeValue = defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{javaType}}>) listValue,{{javaType}}.class);
-                 } else{
-                    attributeValue = defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}}) value);
-                }
+                AttributeValue attributeValue = defaultTypeHandler.encode{{firstUpFieldName}}(({{fullJavaType}}) value);
                 expressionAttributeValues.put(varName, attributeValue);
                 if({{{dynamodbHashKey}}}){
                     keyExpressions.add(expression);

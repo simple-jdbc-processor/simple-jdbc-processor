@@ -24,22 +24,15 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
 
 {{#metadata.columnMetadataList}}
 
-    public void decode{{firstUpFieldName}}(Map<String,AttributeValue> m, {{metadata.domainClazzName}} t, String column, Class<{{javaType}}> targetType){
+    public void decode{{firstUpFieldName}}(Map<String,AttributeValue> m, {{metadata.domainClazzName}} t, String column){
         AttributeValue {{fieldName}} = m.get(column);
         if ({{fieldName}} != null) {
-            t.set{{firstUpFieldName}}(({{javaType}}) getValue({{fieldName}}, targetType));
+            t.set{{firstUpFieldName}}(({{fullJavaType}}) getValue({{fieldName}}, {{fieldName}}.getClass()));
         }
     }
 
-    public AttributeValue encode{{firstUpFieldName}}({{javaType}} value) {
+    public AttributeValue encode{{firstUpFieldName}}({{fullJavaType}} value) {
         return getAttributeValue(value);
-    }
-
-    public AttributeValue encode{{firstUpFieldName}}List(List<{{javaType}}> value, Class<{{javaType}}> javaType) {
-        if(javaType.isAssignableFrom(Number.class)){
-            return AttributeValue.builder().ns(value.stream().map(String::valueOf).collect(Collectors.toList())).build();
-        }
-        return AttributeValue.builder().ss(value.stream().map(String::valueOf).collect(Collectors.toList())).build();
     }
 
 {{/metadata.columnMetadataList}}
@@ -175,7 +168,7 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
         }
         {{metadata.domainClazzName}} t = new {{metadata.domainClazzName}}();
         {{#metadata.columnMetadataList}}
-        decode{{firstUpFieldName}}(m,t,"{{originColumnName}}", {{javaType}}.class);
+        decode{{firstUpFieldName}}(m,t,"{{originColumnName}}");
         {{/metadata.columnMetadataList}}
         return t;
     }

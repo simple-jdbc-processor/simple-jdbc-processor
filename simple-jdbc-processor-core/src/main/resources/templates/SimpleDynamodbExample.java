@@ -76,27 +76,27 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
 
 {{#metadata.columnMetadataList}}
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}EqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}EqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " = ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThan({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThan({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " > ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThanOrEqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThanOrEqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " >= ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThan({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThan({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " < ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThanOrEqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThanOrEqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " <= ", value));
         return this;
     }

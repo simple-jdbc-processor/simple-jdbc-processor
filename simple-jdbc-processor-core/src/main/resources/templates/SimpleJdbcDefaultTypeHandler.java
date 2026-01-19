@@ -177,7 +177,13 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             String column = columns.get(i);
             {{#metadata.columnMetadataList}}
             if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
+                {{^collection}}
                 decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", i + 1, {{sqlJavaType}}.class);
+                {{/collection}}
+                {{#collection}}
+                decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", i + 1);
+                {{/collection}}
+
                 continue;
             }
             {{/metadata.columnMetadataList}}
@@ -189,12 +195,18 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
         int index = 1;
         {{metadata.domainClazzName}} t = new {{metadata.domainClazzName}}();
         {{#metadata.columnMetadataList}}
+    {{^collection}}
         decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", index++, {{sqlJavaType}}.class);
+    {{/collection}}
+    {{#collection}}
+        decode{{firstUpFieldName}}(rs, t, "{{originColumnName}}", index++);
+    {{/collection}}
         {{/metadata.columnMetadataList}}
         return t;
     }
 
     {{#metadata.columnMetadataList}}
+    {{^collection}}
     public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, int index, Class<{{sqlJavaType}}> targetType) throws SQLException {
         if (index > 0) {
             {{#isEnums}}
@@ -238,12 +250,18 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
             {{/isEnums}}
         }
     }
+    {{/collection}}
+    {{#collection}}
+    public void decode{{firstUpFieldName}}(ResultSet resultSet, {{metadata.domainClazzName}} t, String column, int index) throws SQLException {
+        throw new UnsupportedOperationException("decode{{firstUpFieldName}} method not support");
+    }
+    {{/collection}}
 
-    public Object encode{{firstUpFieldName}}({{javaType}} value) {
+    public Object encode{{firstUpFieldName}}({{fullJavaType}} value) {
         {{^isEnums}}return value;{{/isEnums}}{{#isEnums}}return value == null ? null: String.valueOf(value);{{/isEnums}}
     }
 
-    public List encode{{firstUpFieldName}}List(List<{{javaType}}> values) {
+    public List encode{{firstUpFieldName}}List(List<{{fullJavaType}}> values) {
         {{^isEnums}}return values;{{/isEnums}}
         {{#isEnums}}return values.stream().map(String::valueOf).collect(java.util.stream.Collectors.toList());{{/isEnums}}
     }

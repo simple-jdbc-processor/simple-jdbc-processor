@@ -885,17 +885,17 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         {{#metadata.columnMetadataList}}
         if ("{{originColumnName}}".equals(column) || "{{columnName}}".equals(column) || "{{fieldName}}".equals(column)) {
             if (criteria.getValue() != null) {
-                Object value = defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}}) criteria.getValue());
+                Object value = defaultTypeHandler.encode{{firstUpFieldName}}(({{fullJavaType}}) criteria.getValue());
                 params.add(value);
                 return;
             }
             if (criteria.getSecondValue() != null) {
-                Object value = defaultTypeHandler.encode{{firstUpFieldName}}(({{javaType}}) criteria.getSecondValue());
+                Object value = defaultTypeHandler.encode{{firstUpFieldName}}(({{fullJavaType}}) criteria.getSecondValue());
                 params.add(value);
                 return;
             }
             if (criteria.getListValue() != null) {
-                List values = defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{javaType}}>) criteria.getListValue());
+                List values = defaultTypeHandler.encode{{firstUpFieldName}}List((List<{{fullJavaType}}>) criteria.getListValue());
                 params.addAll(values);
                 return;
             }

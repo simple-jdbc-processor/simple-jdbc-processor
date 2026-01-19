@@ -149,62 +149,62 @@ public class {{metadata.exampleClazzSimpleName}} implements java.io.Serializable
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}EqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}EqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " = ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotEqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotEqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " <> ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}In(List<{{javaType}}> values) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}In(List<{{fullJavaType}}> values) {
         criteries.add(new Criteria("{{columnName}}", " in ", values));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}In({{javaType}}... values) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}In({{fullJavaType}}... values) {
         and{{firstUpFieldName}}In(Arrays.asList(values));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotIn(List<{{javaType}}> values) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotIn(List<{{fullJavaType}}> values) {
         criteries.add(new Criteria("{{columnName}}", " not in ", values));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotIn({{javaType}}... values) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotIn({{fullJavaType}}... values) {
         and{{firstUpFieldName}}NotIn(Arrays.asList(values));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}Between({{javaType}} value1, {{javaType}} value2) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}Between({{fullJavaType}} value1, {{fullJavaType}} value2) {
         criteries.add(new Criteria("{{columnName}}", " between ", value1, value2));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotBetween({{javaType}} value1, {{javaType}} value2) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}NotBetween({{fullJavaType}} value1, {{fullJavaType}} value2) {
         criteries.add(new Criteria("{{columnName}}", " not between ", value1, value2));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThan({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThan({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " > ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThanOrEqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}GreaterThanOrEqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " >= ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThan({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThan({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " < ", value));
         return this;
     }
 
-    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThanOrEqualTo({{javaType}} value) {
+    public {{metadata.exampleClazzSimpleName}} and{{firstUpFieldName}}LessThanOrEqualTo({{fullJavaType}} value) {
         criteries.add(new Criteria("{{columnName}}", " <= ", value));
         return this;
     }

@@ -48,6 +48,8 @@ public class ColumnMetadata {
 
     private boolean dynamodbRangeKey;
 
+    private String collectionType;
+
     public String getFieldName() {
         return fieldName;
     }
@@ -141,6 +143,7 @@ public class ColumnMetadata {
                 || fullJavaType.contains("java.util.Map")
                 || fullJavaType.contains("java.util.HashMap")) {
             setCollection(true);
+            setCollectionType(fullJavaType.substring(0,fullJavaType.indexOf("<")));
         }
         setSqlJavaType(fullJavaType);
         if (fullJavaType.equalsIgnoreCase("java.util.Date")) {
@@ -296,5 +299,13 @@ public class ColumnMetadata {
 
     public void setDynamodbRangeKey(boolean dynamodbRangeKey) {
         this.dynamodbRangeKey = dynamodbRangeKey;
+    }
+
+    public String getCollectionType() {
+        return collectionType;
+    }
+
+    public void setCollectionType(String collectionType) {
+        this.collectionType = collectionType;
     }
 }
