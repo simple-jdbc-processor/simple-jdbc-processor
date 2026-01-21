@@ -160,7 +160,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         ArrayList<Object> params = new ArrayList<>(columns.size() + 1);
         defaultTypeHandler.encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             prefix.append("{{columnName}} = ?, ");
         }
         {{/metadata.columnMetadataList}}
@@ -246,7 +246,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         defaultTypeHandler.encodeSelective(params, t);
 
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             prefix.append("{{columnName}} = ?, ");
         }
         {{/metadata.columnMetadataList}}
@@ -451,7 +451,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
                 .append(" (");
         defaultTypeHandler.encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             prefix.append("{{columnName}}, ");
         }
         {{/metadata.columnMetadataList}}
@@ -481,7 +481,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         defaultTypeHandler.encodeSelective(params, t);
 
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             prefix.append("{{columnName}}, ");
         }
         {{/metadata.columnMetadataList}}
@@ -511,7 +511,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
 
         defaultTypeHandler.encodeSelective(params, t);
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             prefix.append("{{columnName}}, ");
         }
         {{/metadata.columnMetadataList}}

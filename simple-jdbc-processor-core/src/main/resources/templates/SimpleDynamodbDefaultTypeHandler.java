@@ -181,7 +181,7 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
     public Map<String, AttributeValue> encode({{metadata.domainClazzName}} t) {
         Map<String, AttributeValue> m = new HashMap<>();
         {{#metadata.columnMetadataList}}
-        if(t.get{{firstUpFieldName}}() != null){
+        if({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}){
             m.put("{{originColumnName}}", encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}

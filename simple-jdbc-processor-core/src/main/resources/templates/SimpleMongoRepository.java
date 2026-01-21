@@ -390,7 +390,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         List<Bson> updateOperations = new ArrayList<>();
 
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null || !selective) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null ||{{/basicType}} !selective) {
             updateOperations.add(Updates.set("{{columnName}}", t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}

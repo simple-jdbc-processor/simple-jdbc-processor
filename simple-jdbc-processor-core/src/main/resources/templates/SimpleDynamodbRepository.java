@@ -224,12 +224,12 @@ public class {{metadata.repositoryClazzSimpleName}} implements io.github.simple.
 
             {{#metadata.columnMetadataList}}
             {{#dynamodbHashKey}}
-            if(t.get{{firstUpFieldName}}() != null){
+            if({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}){
                 keyPair.setHashKey(t.get{{firstUpFieldName}}());
             }
             {{/dynamodbHashKey}}
             {{#dynamodbRangeKey}}
-            if(t.get{{firstUpFieldName}}() != null){
+            if({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}){
                 keyPair.setRangeKey(t.get{{firstUpFieldName}}());
             }
             {{/dynamodbRangeKey}}

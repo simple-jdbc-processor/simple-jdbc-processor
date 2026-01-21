@@ -482,7 +482,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     private String buildUpdateScript({{metadata.domainClazzName}} t) {
         List<String> updates = new ArrayList<>();
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             updates.add("ctx._source.{{columnName}} = params.{{columnName}}");
         }
         {{/metadata.columnMetadataList}}
@@ -492,7 +492,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
     private Map<String, JsonData> buildUpdateScriptParams({{metadata.domainClazzName}} t) {
         Map<String, JsonData> params = new HashMap<>();
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             params.put("{{columnName}}", toJsonData(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}
@@ -508,7 +508,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
         if (value instanceof LocalDateTime) {
             LocalDateTime localDateTime = (LocalDateTime) value;
-            return localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().get{{metadata.primaryMetadata.firstUpFieldName}}())).toEpochMilli();
+            return localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId())).toEpochMilli();
         }
         return Double.parseDouble(value.toString());
     }
@@ -519,7 +519,7 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
         if (value instanceof LocalDateTime) {
             LocalDateTime localDateTime = (LocalDateTime) value;
-            return JsonData.of(localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().get{{metadata.primaryMetadata.firstUpFieldName}}())).toEpochMilli());
+            return JsonData.of(localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId())).toEpochMilli());
         }
         return JsonData.of(value);
     }

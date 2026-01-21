@@ -62,7 +62,7 @@ public class {{metadata.typeHandlerClazzSimpleName}} {
 
     public void encodeSelective(List params, {{metadata.domainClazzName}} t) {
         {{#metadata.columnMetadataList}}
-        if (t.get{{firstUpFieldName}}() != null) {
+        if ({{^basicType}}t.get{{firstUpFieldName}}() != null{{/basicType}}{{#basicType}}true{{/basicType}}) {
             params.add(encode{{firstUpFieldName}}(t.get{{firstUpFieldName}}()));
         }
         {{/metadata.columnMetadataList}}

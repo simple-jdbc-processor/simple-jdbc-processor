@@ -50,6 +50,8 @@ public class ColumnMetadata {
 
     private String collectionType;
 
+    private boolean basicType;
+
     public String getFieldName() {
         return fieldName;
     }
@@ -108,31 +110,45 @@ public class ColumnMetadata {
             stringType = true;
             this.resultSetGetMethodName = "getString";
         }
+        if (javaType.equals("long") || javaType.equals("int")
+                || javaType.equals("short") || javaType.equals("byte") || javaType.equals("boolean")
+                || javaType.equals("float") || javaType.equals("double")) {
+            this.basicType = true;
+        }
         if (javaType.equalsIgnoreCase("int") || javaType.equalsIgnoreCase("java.lang.Integer")) {
             this.javaType = "Integer";
+            this.fullJavaType = this.javaType;
             defaultValue = "0";
             this.resultSetGetMethodName = "getInt";
         }
         if (javaType.equalsIgnoreCase("long") || javaType.equalsIgnoreCase("java.lang.Long")) {
             this.javaType = "Long";
+            this.fullJavaType = this.javaType;
             this.defaultValue = "0L";
             this.resultSetGetMethodName = "getLong";
         }
         if (javaType.equalsIgnoreCase("short") || javaType.equalsIgnoreCase("java.lang.Short")) {
             this.javaType = "Short";
+            this.fullJavaType = this.javaType;
             this.defaultValue = "0";
             this.resultSetGetMethodName = "getShort";
         }
         if (javaType.equalsIgnoreCase("boolean") || javaType.equalsIgnoreCase("java.lang.Boolean")) {
             this.javaType = "Boolean";
+            this.fullJavaType = this.javaType;
+            this.defaultValue = "false";
             this.resultSetGetMethodName = "getBoolean";
         }
         if (javaType.equalsIgnoreCase("float") || javaType.equalsIgnoreCase("java.lang.Float")) {
             this.javaType = "Float";
+            this.fullJavaType = this.javaType;
+            this.defaultValue = "0";
             this.resultSetGetMethodName = "getFloat";
         }
         if (javaType.equalsIgnoreCase("double") || javaType.equalsIgnoreCase("java.lang.Double")) {
             this.javaType = "Double";
+            this.fullJavaType = this.javaType;
+            this.defaultValue = "0";
             this.resultSetGetMethodName = "getDouble";
         }
         if (fullJavaType.contains("java.util.List")
@@ -140,11 +156,13 @@ public class ColumnMetadata {
                 || fullJavaType.contains("java.util.Collection")
                 || fullJavaType.contains("java.util.Set")
                 || fullJavaType.contains("java.util.HashSet")
+                || fullJavaType.contains("java.util.LinkedHashSet")
                 || fullJavaType.contains("java.util.Map")
+                || fullJavaType.contains("java.util.LinkedHashMap")
                 || fullJavaType.contains("java.util.HashMap")) {
             setCollection(true);
-            if(fullJavaType.contains("<")){
-                setCollectionType(fullJavaType.substring(0,fullJavaType.indexOf("<")));
+            if (fullJavaType.contains("<")) {
+                setCollectionType(fullJavaType.substring(0, fullJavaType.indexOf("<")));
             }
         }
         setSqlJavaType(fullJavaType);
@@ -309,5 +327,13 @@ public class ColumnMetadata {
 
     public void setCollectionType(String collectionType) {
         this.collectionType = collectionType;
+    }
+
+    public boolean isBasicType() {
+        return basicType;
+    }
+
+    public void setBasicType(boolean basicType) {
+        this.basicType = basicType;
     }
 }
