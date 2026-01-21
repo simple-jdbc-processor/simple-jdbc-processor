@@ -15,7 +15,7 @@ Demo [Demo](https://simple-jdbc-processor.github.io/simple-jdbc-processor-genera
  <dependency>
       <artifactId>simple-jdbc-processor-starter</artifactId>
       <groupId>io.github.simple-jdbc-processor</groupId>
-      <version>1.4.0-SNAPSHOT</version>
+      <version>1.4.0</version>
 </dependency>
 
 maven 编译插件:
@@ -30,7 +30,7 @@ maven 编译插件:
             <path>
                 <artifactId>simple-jdbc-processor-core</artifactId>
                 <groupId>com.github.simple-jdbc-processor</groupId>
-                <version>1.4.0-SNAPSHOT</version>
+                <version>1.4.0</version>
             </path>
         </annotationProcessorPaths>
     </configuration>
