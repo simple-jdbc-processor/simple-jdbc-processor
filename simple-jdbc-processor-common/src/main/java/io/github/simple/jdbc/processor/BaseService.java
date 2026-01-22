@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class BaseService<T, ID, Example> {
 
@@ -30,6 +31,10 @@ public class BaseService<T, ID, Example> {
 
     public List<T> selectByExample(Example example) {
         return this.repository.selectByExample(example);
+    }
+
+    public void consumeByExample(Example example, Consumer<T> consumer) {
+        this.repository.consumeByExample(example, consumer);
     }
 
     public T selectOne(Example example) {

@@ -21,6 +21,10 @@ public @interface SimpleJdbc {
      */
     String dataSource() default "";
 
+    /**
+     * 指定表名优先级最高, or @Table 注解.
+     */
+    String tableName() default "";
 
     /**
      * 从库,如果配置该项,自动轮询.

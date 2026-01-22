@@ -132,7 +132,10 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
 
     public TableMetadata readTableMetadata(Element element) throws IOException {
         SimpleJdbc example = element.getAnnotation(SimpleJdbc.class);
-        String tableName = getTableName(element);
+        String tableName = example.tableName();
+        if (tableName.isEmpty()) {
+            tableName = getTableName(element);
+        }
         PackageElement packageOf = processingEnv.getElementUtils().getPackageOf(element);
         String clazzName = getPackageName(element);
 
