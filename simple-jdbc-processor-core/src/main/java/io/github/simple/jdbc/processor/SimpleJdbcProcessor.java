@@ -131,8 +131,8 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
 
 
     public TableMetadata readTableMetadata(Element element) throws IOException {
-        SimpleJdbc example = element.getAnnotation(SimpleJdbc.class);
-        String tableName = example.tableName();
+        SimpleJdbc simpleJdbc = element.getAnnotation(SimpleJdbc.class);
+        String tableName = simpleJdbc.tableName();
         if (tableName.isEmpty()) {
             tableName = getTableName(element);
         }
@@ -141,21 +141,21 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
 
         String exampleName = (clazzName + "Example");
 
-        DialectMetadata dialect = example.dialect().getValue();
+        DialectMetadata dialect = simpleJdbc.dialect().getValue();
         TableMetadata tableMetadata = new TableMetadata()
-                .setReadOnly(example.readOnly())
+                .setReadOnly(simpleJdbc.readOnly())
                 .setDomainClazzName(clazzName)
                 .setExampleClazzName(exampleName)
                 .setPackageName(getPackageName(packageOf))
-                .setUseSpring(example.useSpring())
-                .setSlaveDataSources(Arrays.asList(example.slaveDataSources()))
-                .setDataSource(example.dataSource() == null || example.dataSource().isEmpty() ? null : example.dataSource());
-        if (example.escape()) {
+                .setUseSpring(true)
+                .setSlaveDataSources(Arrays.asList(simpleJdbc.slaveDataSources()))
+                .setDataSource(simpleJdbc.dataSource() == null || simpleJdbc.dataSource().isEmpty() ? null : simpleJdbc.dataSource());
+        if (simpleJdbc.escape()) {
             tableMetadata.setLeftEncode(dialect.getLeftEscape())
                     .setRightEncode(dialect.getRightEscape());
         }
-        boolean useUnderLine = example.useUnderLine();
-        if (example.dialect() == DialectEnums.ELASTICSEARCH || example.dialect() == DialectEnums.MONGO) {
+        boolean useUnderLine = simpleJdbc.useUnderLine();
+        if (simpleJdbc.dialect() == DialectEnums.ELASTICSEARCH || simpleJdbc.dialect() == DialectEnums.MONGO) {
             useUnderLine = false;
         }
         String repositoryName = clazzName + "SimpleJdbcRepository";
@@ -213,7 +213,7 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
             }
 
 
-            extractAnnotationValues(member, example.dialect(), columnMetadata, tableMetadata.getColumnMetadataList());
+            extractAnnotationValues(member, simpleJdbc.dialect(), columnMetadata, tableMetadata.getColumnMetadataList());
 
             columnMetadata.setOriginColumnName(columnMetadata.getColumnName());
 
@@ -225,17 +225,21 @@ public class SimpleJdbcProcessor extends AbstractProcessor {
                 columnMetadata.setColumnName(tableMetadata.getLeftEncode() + columnName + tableMetadata.getRightEncode());
             }
 
+            // 主键指定
+            if(columnName.equalsIgnoreCase(simpleJdbc.tablePrimaryKey()) || name.equalsIgnoreCase(simpleJdbc.tablePrimaryKey())){
+                columnMetadata.setPrimary(true);
+            }
+
             if (columnMetadata.isPrimary()) {
                 tableMetadata.setPrimaryMetadata(columnMetadata);
             }
-
 
         }
 
         if (tableMetadata.getPrimaryMetadata() == null && !tableMetadata.getColumnMetadataList().isEmpty()) {
             ColumnMetadata columnMetadata = tableMetadata.getColumnMetadataList().get(0);
             columnMetadata.setPrimary(true);
-            if (example.dialect() == DialectEnums.MONGO) {
+            if (simpleJdbc.dialect() == DialectEnums.MONGO) {
                 columnMetadata.setColumnName("_id");
             }
             tableMetadata.setPrimaryMetadata(columnMetadata);

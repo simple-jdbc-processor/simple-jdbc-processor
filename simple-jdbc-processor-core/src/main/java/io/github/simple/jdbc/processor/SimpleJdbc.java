@@ -9,13 +9,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 public @interface SimpleJdbc {
 
-
-    /**
-     * 使用spring上下文
-     */
-    boolean useSpring() default true;
-
-
     /**
      * 多数据库的情况下手动指定要使用主库.
      */
@@ -25,6 +18,11 @@ public @interface SimpleJdbc {
      * 指定表名优先级最高, or @Table 注解.
      */
     String tableName() default "";
+
+    /**
+     * 指定主键, or @Id 注解.
+     */
+    String tablePrimaryKey() default "";
 
     /**
      * 从库,如果配置该项,自动轮询.

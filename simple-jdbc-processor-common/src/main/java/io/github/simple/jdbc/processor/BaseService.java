@@ -1,6 +1,5 @@
 package io.github.simple.jdbc.processor;
 
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,10 @@ public class BaseService<T, ID, Example> {
         return repository.selectByPrimaryKey(id);
     }
 
+    public T selectByPrimaryKeyForUpdate(ID id) {
+        return this.repository.selectByPrimaryKeyForUpdate(id);
+    }
+
     public List<T> selectByPrimaryKeys(List<ID> ids) {
         return repository.selectByPrimaryKeys(ids);
     }
@@ -35,6 +38,10 @@ public class BaseService<T, ID, Example> {
 
     public void consumeByExample(Example example, Consumer<T> consumer) {
         this.repository.consumeByExample(example, consumer);
+    }
+
+    public List<T> selectAll() {
+        return this.repository.selectAll();
     }
 
     public T selectOne(Example example) {
@@ -108,7 +115,15 @@ public class BaseService<T, ID, Example> {
         return new PageInfo<>(page, size, total, ts);
     }
 
-    @Autowired
+    public boolean existsById(ID id) {
+        return this.repository.existsById(id);
+    }
+
+    public boolean existsByExample(Example query) {
+        return this.repository.existsByExample(query);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
     protected synchronized void setRepository(SimpleJdbcRepository<T, ID, Example> repository) {
         if (this.repository == null) {
             this.repository = repository;
