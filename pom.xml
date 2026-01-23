@@ -6,7 +6,7 @@
     <artifactId>simple-jdbc-processor</artifactId>
     <name>simple-jdbc-processor</name>
     <packaging>pom</packaging>
-    <version>1.4.1</version>
+    <version>1.4.2</version>
     <description>Simple jdbc processor parent</description>
 
     <url>https://github.com/simple-jdbc-processor/simple-jdbc-processor</url>

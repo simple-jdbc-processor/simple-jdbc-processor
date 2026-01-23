@@ -461,6 +461,11 @@ public class {{metadata.repositoryClazzSimpleName}} {{#metadata.extendsSimpleJdb
         }
     }
 
+    @Autowired(required = false)
+    public void setDefaultTypeHandler({{metadata.typeHandlerClazzName}} defaultTypeHandler) {
+        this.defaultTypeHandler = defaultTypeHandler;
+    }
+
     public String getDatabaseName() {
         return databaseName;
     }
